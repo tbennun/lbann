@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <omp.h>
 #include "random.hpp"
+#include <omp.h>
 
 namespace {
 #ifdef __ICC
@@ -53,28 +53,23 @@ extern lbann::rng_gen data_seq_generator;
 #pragma omp threadprivate(data_seq_generator)
 lbann::rng_gen data_seq_generator;
 #endif
-}
+} // namespace
 
 namespace lbann {
 
-rng_gen& get_generator() {
-  return ::generator;
-}
+rng_gen& get_generator() { return ::generator; }
 
-fast_rng_gen& get_fast_generator() {
-  return ::fast_generator;
-}
+fast_rng_gen& get_fast_generator() { return ::fast_generator; }
 
-rng_gen& get_data_seq_generator() {
-  return ::data_seq_generator;
-}
+rng_gen& get_data_seq_generator() { return ::data_seq_generator; }
 
-void init_random(int seed) {
+void init_random(int seed)
+{
   if (seed != -1) {
     // Seed every OpenMP thread, if present.
     // Note: Threadprivate OMP variables don't work with dynamic threads.
 #ifdef _OPENMP
-    #pragma omp parallel
+#pragma omp parallel
     {
       get_generator().seed((seed << 8) | omp_get_thread_num());
       get_fast_generator().seed((seed << 8) | omp_get_thread_num());
@@ -83,12 +78,13 @@ void init_random(int seed) {
     get_generator().seed(seed);
     get_fast_generator().seed(seed);
 #endif
-  } else {
+  }
+  else {
     // Seed with a random value.
     std::random_device rd;
     unsigned rand_val = rd();
 #ifdef _OPENMP
-    #pragma omp parallel
+#pragma omp parallel
     {
       get_generator().seed((rand_val << 8) | omp_get_thread_num());
       get_fast_generator().seed((rand_val << 8) | omp_get_thread_num());
@@ -100,7 +96,8 @@ void init_random(int seed) {
   }
 }
 
-void init_data_seq_random(int seed) {
+void init_data_seq_random(int seed)
+{
   if (seed == -1) {
     // Seed with a random value.
     std::random_device rd;
@@ -110,7 +107,7 @@ void init_data_seq_random(int seed) {
   // Seed every OpenMP thread, if present.
   // Note: Threadprivate OMP variables don't work with dynamic threads.
 #ifdef _OPENMP
-  #pragma omp parallel
+#pragma omp parallel
   {
     get_data_seq_generator().seed(seed);
   }
@@ -119,4 +116,4 @@ void init_data_seq_random(int seed) {
 #endif
 }
 
-}  // namespace lbann
+} // namespace lbann

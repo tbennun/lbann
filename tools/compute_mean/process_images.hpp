@@ -27,10 +27,10 @@
 
 #ifndef _TOOLS_COMPUTE_MEAN_PROCESS_IMAGES_
 #define _TOOLS_COMPUTE_MEAN_PROCESS_IMAGES_
-#include "params.hpp"
-#include "mpi_states.hpp"
-#include "walltimes.hpp"
 #include "image_list.hpp"
+#include "mpi_states.hpp"
+#include "params.hpp"
+#include "walltimes.hpp"
 
 namespace tools_compute_mean {
 
@@ -38,8 +38,10 @@ namespace tools_compute_mean {
  * Crop images and use them to compute mean. At the same time, store the cropped
  * images.
  */
-bool process_images(const image_list& img_list, const params& mp,
-                    const mpi_states& ms, walltimes& wt);
+bool process_images(const image_list& img_list,
+                    const params& mp,
+                    const mpi_states& ms,
+                    walltimes& wt);
 
 } // end of namespace tools_compute_mean
 #endif // _TOOLS_COMPUTE_MEAN_PROCESS_IMAGES_

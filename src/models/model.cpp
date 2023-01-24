@@ -44,9 +44,9 @@
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/graph.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/onnx_utils.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/summary_impl.hpp"
-#include "lbann/utils/onnx_utils.hpp"
 
 #include <model.pb.h>
 #include <optimizers.pb.h>
@@ -420,7 +420,8 @@ std::vector<ViewingWeightsPtr> model::get_weights_pointers() const
 }
 
 #ifdef LBANN_HAS_ONNX
-void model::serialize_to_onnx(onnx::ModelProto& mp) {
+void model::serialize_to_onnx(onnx::ModelProto& mp)
+{
   mp.set_ir_version(7);
   auto* opset = mp.add_opset_import();
   // The empty string ("") domain indicates the operators defined

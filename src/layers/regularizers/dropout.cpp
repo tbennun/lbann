@@ -31,24 +31,27 @@
 namespace lbann {
 
 template <typename TensorDataType, data_layout layout, El::Device device>
-std::unique_ptr<Layer> build_dropout_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& layer_msg)
+std::unique_ptr<Layer>
+build_dropout_layer_from_pbuf(lbann_comm* comm,
+                              lbann_data::Layer const& layer_msg)
 {
   const auto& params = layer_msg.dropout();
   return std::make_unique<dropout_layer<TensorDataType, layout, device>>(
     params.keep_prob());
 }
 
-#define PROTO_DEVICE(T, Device)                                         \
-  template std::unique_ptr<Layer>                                       \
-  build_dropout_layer_from_pbuf<T, data_layout::DATA_PARALLEL, Device>( \
-    lbann_comm*, lbann_data::Layer const&);                             \
-  template std::unique_ptr<Layer>                                       \
-  build_dropout_layer_from_pbuf<T, data_layout::MODEL_PARALLEL, Device>( \
-    lbann_comm*, lbann_data::Layer const&);                             \
-  template class dropout<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template std::unique_ptr<Layer>                                              \
+  build_dropout_layer_from_pbuf<T, data_layout::DATA_PARALLEL, Device>(        \
+    lbann_comm*,                                                               \
+    lbann_data::Layer const&);                                                 \
+  template std::unique_ptr<Layer>                                              \
+  build_dropout_layer_from_pbuf<T, data_layout::MODEL_PARALLEL, Device>(       \
+    lbann_comm*,                                                               \
+    lbann_data::Layer const&);                                                 \
+  template class dropout<T, data_layout::DATA_PARALLEL, Device>;               \
   template class dropout<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

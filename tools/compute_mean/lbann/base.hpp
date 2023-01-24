@@ -29,7 +29,7 @@
 #ifndef LBANN_BASE_HPP
 #define LBANN_BASE_HPP
 
-#include "lbann_config.hpp"
 #include "Mat.hpp"
+#include "lbann_config.hpp"
 
 #endif // LBANN_BASE_HPP

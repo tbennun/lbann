@@ -33,11 +33,10 @@
 #include <stdexcept>
 #include <string>
 
-#define LBANN_ASSERT_POINTER(ptr)                                       \
-  do {                                                                  \
-  if (!ptr)                                                             \
-    throw ::unit_test::utilities::BadPointer(                           \
-      __FILE__, __LINE__, #ptr);                                        \
+#define LBANN_ASSERT_POINTER(ptr)                                              \
+  do {                                                                         \
+    if (!ptr)                                                                  \
+      throw ::unit_test::utilities::BadPointer(__FILE__, __LINE__, #ptr);      \
   } while (false)
 
 namespace unit_test {
@@ -45,11 +44,11 @@ namespace utilities {
 
 struct BadPointer : std::runtime_error
 {
-  BadPointer(std::string const& file, unsigned int line,
+  BadPointer(std::string const& file,
+             unsigned int line,
              std::string const& var_name)
     : std::runtime_error{
-      lbann::build_string(
-        file, ":", line, ": \"", var_name, "\" is null.")}
+        lbann::build_string(file, ":", line, ": \"", var_name, "\" is null.")}
   {}
 };
 
@@ -58,7 +57,10 @@ lbann::lbann_comm& current_world_comm();
 
 // Sizes are not signed.
 template <typename T>
-size_t as_size(T const& size) noexcept { return static_cast<size_t>(size); }
+size_t as_size(T const& size) noexcept
+{
+  return static_cast<size_t>(size);
+}
 
 /** @brief Expert-only methods */
 namespace expert {

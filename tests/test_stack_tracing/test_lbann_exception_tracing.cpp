@@ -27,61 +27,62 @@
 #include "lbann/lbann.hpp"
 #include <csignal>
 
-
 using namespace lbann;
 
-class A {
-  public :
-    void testme_class_A_one() {
-      std::cerr << "starting testme_class_A_one()\n";
-      std::stringstream s;
-      s << __FILE__ << " " << __LINE__ << " :: "
-        << " A:testme_class_A_one() is throwing an exception for testing";
-      throw lbann_exception(s.str());
-    }
+class A
+{
+public:
+  void testme_class_A_one()
+  {
+    std::cerr << "starting testme_class_A_one()\n";
+    std::stringstream s;
+    s << __FILE__ << " " << __LINE__ << " :: "
+      << " A:testme_class_A_one() is throwing an exception for testing";
+    throw lbann_exception(s.str());
+  }
 
-    void testme_class_A_two() {
-      std::cerr << "starting testme_class_A_two()\n";
-      testme_class_A_one();
-    }
+  void testme_class_A_two()
+  {
+    std::cerr << "starting testme_class_A_two()\n";
+    testme_class_A_one();
+  }
 };
 
-class B {
-  public :
-    void testme_class_B_the_first() {
-      std::cerr << "starting testme_class_B_the_first()\n";
-      A a;
-      a.testme_class_A_two();
-    }
+class B
+{
+public:
+  void testme_class_B_the_first()
+  {
+    std::cerr << "starting testme_class_B_the_first()\n";
+    A a;
+    a.testme_class_A_two();
+  }
 
-    void testme_class_B_sigsegv() {
-      raise(SIGSEGV);
-    }
+  void testme_class_B_sigsegv() { raise(SIGSEGV); }
 
-    void testme_class_B_sigint() {
-      raise(SIGINT);
-    }
+  void testme_class_B_sigint() { raise(SIGINT); }
 };
 
-int main(int argc, char *argv[]) {
-  lbann_comm *comm = initialize(argc, argv);
+int main(int argc, char* argv[])
+{
+  lbann_comm* comm = initialize(argc, argv);
   bool master = comm->am_world_master();
 
   try {
-    options *opts = options::get();
+    options* opts = options::get();
     opts->init(argc, argv);
 
     if (master) {
-      std::cerr << "running test for stack tracing when an lbann exception is thrown\n\n";
+      std::cerr << "running test for stack tracing when an lbann exception is "
+                   "thrown\n\n";
     }
 
     B b;
     b.testme_class_B_the_first();
-
-  } catch (lbann_exception& e) {
+  }
+  catch (lbann_exception& e) {
     lbann_report_exception(e, comm);
   }
-
 
   finalize(comm);
   return 0;

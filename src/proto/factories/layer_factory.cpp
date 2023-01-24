@@ -109,9 +109,8 @@ private:
     // input/output type for the multi-precision-capable
     // OperatorLayer. This is temporary, until more of the factory
     // infrastructure considers multiple in/out types.
-    factory_.register_builder(
-      "OperatorLayer",
-      build_operator_layer_from_pbuf<T, T, L, D>);
+    factory_.register_builder("OperatorLayer",
+                              build_operator_layer_from_pbuf<T, T, L, D>);
 
     // Input layer
     LBANN_REGISTER_BUILDER(Input, input);

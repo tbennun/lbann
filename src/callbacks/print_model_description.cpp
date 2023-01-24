@@ -33,23 +33,23 @@ namespace lbann {
 namespace callback {
 
 template <class Archive>
-void print_model_description::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)));
+void print_model_description::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)));
 }
 
-void print_model_description::on_setup_end(model *m) {
+void print_model_description::on_setup_end(model* m)
+{
   if (m->get_comm()->am_world_master()) {
-    std::cout << "\n"
-              << m->get_description()
-              << std::endl;
+    std::cout << "\n" << m->get_description() << std::endl;
   }
 }
 
-std::unique_ptr<callback_base>
-build_print_model_description_callback_from_pbuf(
-  const google::protobuf::Message&, const std::shared_ptr<lbann_summary>&) {
+std::unique_ptr<callback_base> build_print_model_description_callback_from_pbuf(
+  const google::protobuf::Message&,
+  const std::shared_ptr<lbann_summary>&)
+{
   return std::make_unique<print_model_description>();
 }
 

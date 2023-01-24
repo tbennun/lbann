@@ -25,35 +25,40 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
 #include "lbann/comm.hpp"
-#include "lbann/utils/options.hpp"
+#include "lbann/utils/commify.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/jag_utils.hpp"
-#include "lbann/utils/commify.hpp"
+#include "lbann/utils/options.hpp"
 #include <cnpy.h>
 #include <math.h>
+#include <vector>
 
 using namespace lbann;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
 
   try {
     // Initialize options db (this parses the command line)
-    options *opts = options::get();
+    options* opts = options::get();
     opts->init(argc, argv);
 
     if (argc == 1) {
       if (master) {
-        std::cerr << "usage: " << argv[0] << " --filelist=<string>" << std::endl;
+        std::cerr << "usage: " << argv[0] << " --filelist=<string>"
+                  << std::endl;
       }
       return EXIT_FAILURE;
     }
 
-    if (! (opts->has_string("filelist"))) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: improper invocation; run with no cmd line args for proper invocation");
+    if (!(opts->has_string("filelist"))) {
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            " :: improper invocation; run with no cmd line "
+                            "args for proper invocation");
     }
 
     const std::string input_fn = opts->get_string("filelist");
@@ -64,7 +69,7 @@ int main(int argc, char *argv[]) {
     char b[1024];
     sprintf(b, "debug.%d", rank);
     std::ofstream out(b);
-    if (! out) {
+    if (!out) {
       LBANN_ERROR("failed to open ", b, " for reading");
     }
 
@@ -72,7 +77,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> filenames;
     read_filelist(comm.get(), input_fn, filenames);
 
-    for (size_t j=rank; j<filenames.size(); j+=np) {
+    for (size_t j = rank; j < filenames.size(); j += np) {
       if (master) {
         std::cerr << "loading: " << filenames[j] << std::endl;
       }
@@ -87,10 +92,13 @@ int main(int argc, char *argv[]) {
       out.close();
       out.open(b, std::ofstream::out | std::ofstream::app);
     }
-  } catch (std::exception const &e) {
-    if (master) std::cerr << "caught exception: " << e.what() << "\n";
+  }
+  catch (std::exception const& e) {
+    if (master)
+      std::cerr << "caught exception: " << e.what() << "\n";
     return EXIT_FAILURE;
-  } catch (...) {
+  }
+  catch (...) {
     std::cerr << "unknown exception in main\n";
     return EXIT_FAILURE;
   }

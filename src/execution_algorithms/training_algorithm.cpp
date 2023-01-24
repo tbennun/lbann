@@ -34,8 +34,7 @@
 
 namespace lbann {
 
-TrainingAlgorithm::TrainingAlgorithm(std::string name)
-  : m_name{std::move(name)}
+TrainingAlgorithm::TrainingAlgorithm(std::string name) : m_name{std::move(name)}
 {}
 
 std::string const& TrainingAlgorithm::get_name() const noexcept

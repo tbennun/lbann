@@ -31,10 +31,8 @@
 
 #include <memory>
 
-namespace unit_test
-{
-namespace utilities
-{
+namespace unit_test {
+namespace utilities {
 
 template <typename T>
 bool IsValidPtr(std::unique_ptr<T> const& ptr) noexcept

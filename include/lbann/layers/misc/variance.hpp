@@ -44,7 +44,8 @@ namespace lbann {
  *  estimator.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class variance_layer : public data_type_layer<TensorDataType> {
+class variance_layer : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -55,21 +56,21 @@ public:
   ///@}
 
 public:
-
-  variance_layer(lbann_comm *comm, bool biased)
-    : data_type_layer<TensorDataType>(comm), m_biased(biased) {}
+  variance_layer(lbann_comm* comm, bool biased)
+    : data_type_layer<TensorDataType>(comm), m_biased(biased)
+  {}
   variance_layer(const variance_layer& other)
     : data_type_layer<TensorDataType>(other),
       m_biased(other.m_biased),
       m_means(other.m_means ? other.m_means->Copy() : nullptr),
-      m_workspace(other.m_workspace ?
-                  other.m_workspace->Copy() : nullptr) {}
-  variance_layer& operator=(const variance_layer& other) {
+      m_workspace(other.m_workspace ? other.m_workspace->Copy() : nullptr)
+  {}
+  variance_layer& operator=(const variance_layer& other)
+  {
     data_type_layer<TensorDataType>::operator=(other);
     m_biased = other.m_biased;
     m_means.reset(other.m_means ? other.m_means->Copy() : nullptr);
-    m_workspace.reset(other.m_workspace ?
-                      other.m_workspace->Copy() : nullptr);
+    m_workspace.reset(other.m_workspace ? other.m_workspace->Copy() : nullptr);
     return *this;
   }
 
@@ -87,20 +88,19 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Biased", m_biased);
     return desc;
   }
 
 protected:
-
   friend class cereal::access;
-  variance_layer()
-    : variance_layer(nullptr, false)
-  {}
+  variance_layer() : variance_layer(nullptr, false) {}
 
-  void setup_data(size_t max_mini_batch_size) override {
+  void setup_data(size_t max_mini_batch_size) override
+  {
     data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     auto dist_data = this->get_prev_activations().DistData();
     dist_data.colDist = El::STAR;
@@ -108,7 +108,8 @@ protected:
     m_workspace.reset(AbsDistMatrixType::Instantiate(dist_data));
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims({1});
     if (this->get_input_size() <= 1) {
@@ -130,7 +131,6 @@ protected:
   void bp_compute() override;
 
 private:
-
   /** Whether to use biased variance estimator. */
   bool m_biased;
 
@@ -140,9 +140,8 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 };
 
-
 #ifndef LBANN_VARIANCE_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
+#define PROTO_DEVICE(T, Device)                                                \
   extern template class variance_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class variance_layer<T, data_layout::MODEL_PARALLEL, Device>
 

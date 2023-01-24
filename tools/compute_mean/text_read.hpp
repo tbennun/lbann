@@ -27,21 +27,23 @@
 
 #ifndef _TOOLS_COMPUTE_MEAN_TEXT_READ_HPP_
 #define _TOOLS_COMPUTE_MEAN_TEXT_READ_HPP_
-#include <vector>
-#include <string>
-#include <sstream>
-#include <fstream>
 #include <algorithm>
-#include <iterator>
-#include <iostream>
 #include <exception>
-
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace tools_compute_mean {
 
 template <typename T, typename F>
-inline bool read_text_stream(const std::string& fileName, std::istream& textStream,
-                             T& container, F func, const unsigned int numHeaderLines = 0u);
+inline bool read_text_stream(const std::string& fileName,
+                             std::istream& textStream,
+                             T& container,
+                             F func,
+                             const unsigned int numHeaderLines = 0u);
 /**
  * Main interface to read a formatted text data file.
  * User provide the file name and the line parsing function, and then
@@ -61,10 +63,14 @@ inline bool read_text_stream(const std::string& fileName, std::istream& textStre
  *   function provide by a user will add an entry as it reads a line
  */
 template <typename T, typename F>
-inline bool read_text_file(const std::string& fileName, T& container, F func,
-                           const unsigned int numHeaderLines = 0u) {
+inline bool read_text_file(const std::string& fileName,
+                           T& container,
+                           F func,
+                           const unsigned int numHeaderLines = 0u)
+{
   std::ifstream textFile(fileName.c_str(), std::ios_base::in);
-  bool ok = read_text_stream<T,F>(fileName, textFile, container, func, numHeaderLines);
+  bool ok =
+    read_text_stream<T, F>(fileName, textFile, container, func, numHeaderLines);
   textFile.close();
   return ok;
 }
@@ -74,16 +80,23 @@ inline bool read_text_file(const std::string& fileName, T& container, F func,
  * which is preloaded but not yet parsed.
  */
 template <typename T, typename F>
-inline bool read_text(const std::string& text, T& container, F func,
-                      const unsigned int numHeaderLines = 0u) {
+inline bool read_text(const std::string& text,
+                      T& container,
+                      F func,
+                      const unsigned int numHeaderLines = 0u)
+{
   std::istringstream iss(text);
-  bool ok = read_text_stream<T,F>(std::string("text buffer"), iss, container, func, numHeaderLines);
+  bool ok = read_text_stream<T, F>(std::string("text buffer"),
+                                   iss,
+                                   container,
+                                   func,
+                                   numHeaderLines);
   return ok;
 }
 
-
 template <typename T, typename F>
-inline bool parse_line(std::string& line, T& container, F func) {
+inline bool parse_line(std::string& line, T& container, F func)
+{
   std::size_t pos = line.find_first_not_of(", \t\r\n");
   if ((pos == std::string::npos) || (line[pos] == '#')) {
     return true; // skipping empty lines or comments
@@ -91,13 +104,18 @@ inline bool parse_line(std::string& line, T& container, F func) {
   return func(line, container);
 }
 
-/// Reads each line from an input stream, and parse the content out into container using func.
+/// Reads each line from an input stream, and parse the content out into
+/// container using func.
 template <typename T, typename F>
-inline bool read_text_stream(const std::string& fileName, std::istream& textStream,
-                             T& container, F func, const unsigned int numHeaderLines) {
+inline bool read_text_stream(const std::string& fileName,
+                             std::istream& textStream,
+                             T& container,
+                             F func,
+                             const unsigned int numHeaderLines)
+{
   std::string line;
 
-  for(unsigned int i=0u; i <= numHeaderLines; ++i) {
+  for (unsigned int i = 0u; i <= numHeaderLines; ++i) {
     if (!std::getline(textStream, line)) {
       std::string msg = "Failed to read " + fileName + "\n";
       throw(msg.c_str());
@@ -105,8 +123,9 @@ inline bool read_text_stream(const std::string& fileName, std::istream& textStre
     }
   }
 
-  while (textStream) { // parse the data file one line at a time until the end of the file
-    if (!(parse_line<T,F>(line, container, func))) {
+  while (textStream) { // parse the data file one line at a time until the end
+                       // of the file
+    if (!(parse_line<T, F>(line, container, func))) {
       std::string msg = "Failed to parse the line '" + line + "'\n";
       throw(msg.c_str());
       return false;

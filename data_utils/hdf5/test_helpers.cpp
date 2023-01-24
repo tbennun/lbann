@@ -86,10 +86,10 @@ TEST_CASE("Longest prefix", "[data_utils][string]")
     CHECK(data_utils::get_longest_common_prefix({"a/b/c/d", "b/c/d/e"}) == ".");
   }
 
-  SECTION("error modes") {
+  SECTION("error modes")
+  {
     CHECK_THROWS(data_utils::get_longest_common_prefix({"/a/b/c", "ab/c/d"}));
-    CHECK_THROWS(
-      data_utils::get_longest_common_prefix({"a/b/c", "/a/b/c"}));
+    CHECK_THROWS(data_utils::get_longest_common_prefix({"a/b/c", "/a/b/c"}));
   }
 }
 

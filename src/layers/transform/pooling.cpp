@@ -42,7 +42,9 @@ struct Builder
   static std::unique_ptr<Layer> Build(Args&&...)
   {
     LBANN_ERROR("Attempted to instantiate layer \"pooling\" with "
-                "Layout=", to_string(L), ".\nThis layer is only "
+                "Layout=",
+                to_string(L),
+                ".\nThis layer is only "
                 "supported with DATA_PARALLEL data layout.");
     return nullptr;
   }
@@ -54,17 +56,17 @@ struct Builder<TensorDataType, data_layout::DATA_PARALLEL, Device>
   template <typename... Args>
   static std::unique_ptr<Layer> Build(Args&&... args)
   {
-    using LayerType = pooling_layer<TensorDataType,
-                                    data_layout::DATA_PARALLEL,
-                                    Device>;
+    using LayerType =
+      pooling_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>;
     return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
-}// namespace
+} // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_pooling_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+std::unique_ptr<Layer>
+build_pooling_layer_from_pbuf(lbann_comm* comm,
+                              lbann_data::Layer const& proto_layer)
 {
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, pooling);
 
@@ -89,10 +91,10 @@ std::unique_ptr<Layer> build_pooling_layer_from_pbuf(
   }
 }
 
-#define PROTO_DEVICE(T, Device) \
-  template class pooling_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class pooling_layer<T, data_layout::DATA_PARALLEL, Device>;         \
   LBANN_LAYER_BUILDER_ETI(pooling, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

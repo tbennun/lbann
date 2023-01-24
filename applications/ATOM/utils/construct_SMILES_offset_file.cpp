@@ -1,27 +1,30 @@
+#include "lbann/comm_impl.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/options.hpp"
+#include "lbann/utils/timer.hpp"
+#include <fstream>
 #include <iostream>
 #include <string>
-#include <fstream>
-#include "lbann/comm_impl.hpp"
-#include "lbann/utils/options.hpp"
-#include "lbann/utils/exception.hpp"
-#include "lbann/utils/timer.hpp"
 
 using namespace lbann;
 
 bool Has_header = false;
 
 // returns usage string
-std::string usage(int argc, char **argv);
+std::string usage(int argc, char** argv);
 
 // parse the cmd line for filenames and delimiter
-void parse_inputs(char &delimiter, std::string &input_filename, std::string &output_filename);
+void parse_inputs(char& delimiter,
+                  std::string& input_filename,
+                  std::string& output_filename);
 
 // returns the number of lines in the file (minus one for header)
 size_t get_num_samples(std::string input_filename, size_t max);
 
 //===========================================================================
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv)
+{
   lbann::world_comm_ptr comm = lbann::initialize(argc, argv);
 
   int np = comm->get_procs_in_world();
@@ -34,7 +37,7 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  options *opts = options::get();
+  options* opts = options::get();
   opts->init(argc, argv);
   if (opts->get_bool("has_header")) {
     Has_header = true;
@@ -47,10 +50,10 @@ int main(int argc, char **argv) {
 
   try {
 
-    //for testing and debugging during development
+    // for testing and debugging during development
     long long max = INT_MAX;
     if (opts->has_int("max")) {
-       max = opts->get_int("max");
+      max = opts->get_int("max");
     }
     std::cout << "\nRunning with max samples = " << max << std::endl;
 
@@ -65,10 +68,11 @@ int main(int argc, char **argv) {
     long long offset = 0;
     std::string line;
     if (Has_header) {
-      getline(in, line); //discard header
-      offset = line.size() +1;
+      getline(in, line); // discard header
+      offset = line.size() + 1;
     }
-    std::cout << "\nfile offset of start of 1st sample: " << offset << std::endl;
+    std::cout << "\nfile offset of start of 1st sample: " << offset
+              << std::endl;
 
     // open output file
     char bb[1024];
@@ -80,7 +84,7 @@ int main(int argc, char **argv) {
 
     // loop over the samples (lines), writing output as we iterate
     long long line_no = 0;
-    const unsigned int Max_length  = std::numeric_limits<unsigned short>::max();
+    const unsigned int Max_length = std::numeric_limits<unsigned short>::max();
     while (getline(in, line)) {
       ++line_no;
       if (!line.size()) {
@@ -100,10 +104,10 @@ int main(int argc, char **argv) {
 
       outb.write((char*)&offset, sizeof(long long));
       outb.write((char*)&len, sizeof(unsigned short));
-      offset += line.size()+1;
+      offset += line.size() + 1;
 
       if (line_no % 100000000 == 0) {
-        std::cout << line_no/100000000 << "*100M offsets written\n";
+        std::cout << line_no / 100000000 << "*100M offsets written\n";
       }
 
       if (line_no >= max) {
@@ -111,8 +115,8 @@ int main(int argc, char **argv) {
       }
     }
 
-    std::cout << "parseme " << input_filename << " "
-              << bb << " " << line_no << std::endl;
+    std::cout << "parseme " << input_filename << " " << bb << " " << line_no
+              << std::endl;
 
     in.close();
     outb.close();
@@ -122,11 +126,12 @@ int main(int argc, char **argv) {
               << "wrote binary output to " << bb << ";\n"
               << "offsets contain " << sizeof(long long) << " bytes, and the\n"
               << "lengths contain " << sizeof(unsigned short) << " bytes\n";
-
-  } catch (lbann::exception& e) {
+  }
+  catch (lbann::exception& e) {
     El::ReportException(e);
     return EXIT_FAILURE;
-  } catch (std::exception& e) {
+  }
+  catch (std::exception& e) {
     El::ReportException(e);
     return EXIT_FAILURE;
   }
@@ -134,25 +139,32 @@ int main(int argc, char **argv) {
   return EXIT_SUCCESS;
 }
 
-std::string usage(int argc, char **argv) {
+std::string usage(int argc, char** argv)
+{
   std::stringstream s;
-  s <<
-    "usage: " << argv[0] << " --input_fn=<string> [--delimiter=<char>] [--has_header]\n"
-    "where: input_fn is a file containing a listing of SMILES strings;\n"
-    "       --delimiter; use: --delimiter=' ' or --delimiter=',';\n"
-    "         you need to modify the code to handle tabs ...\n"
-    "         if --delimiter is not given, assumes each line contains \n"
-    "         a single, newline delimited SMILES string\n"
+  s << "usage: " << argv[0]
+    << " --input_fn=<string> [--delimiter=<char>] [--has_header]\n"
+       "where: input_fn is a file containing a listing of SMILES strings;\n"
+       "       --delimiter; use: --delimiter=' ' or --delimiter=',';\n"
+       "         you need to modify the code to handle tabs ...\n"
+       "         if --delimiter is not given, assumes each line contains \n"
+       "         a single, newline delimited SMILES string\n"
 
-    "\nfunction: constructs a binary file with offsets and lengths of the samples;\n"
-    "offsets are long long, and lengths are short; SMILES strings that are\n"
-    "too long will have their lengths recorded as std::numeric_limits<unsigned short>::max()\n\n"
-    "Note: the output_fn is same as input fn, with the '.offsets' suffix added\n";
+       "\nfunction: constructs a binary file with offsets and lengths of the "
+       "samples;\n"
+       "offsets are long long, and lengths are short; SMILES strings that are\n"
+       "too long will have their lengths recorded as "
+       "std::numeric_limits<unsigned short>::max()\n\n"
+       "Note: the output_fn is same as input fn, with the '.offsets' suffix "
+       "added\n";
   return s.str();
 }
 
-void parse_inputs(char &delimiter, std::string &input_filename, std::string &output_filename) {
-  options *opts = options::get();
+void parse_inputs(char& delimiter,
+                  std::string& input_filename,
+                  std::string& output_filename)
+{
+  options* opts = options::get();
   if (!opts->has_string("input_fn")) {
     LBANN_ERROR("opts->has_string('input_fn') failed");
   }
@@ -172,7 +184,8 @@ void parse_inputs(char &delimiter, std::string &input_filename, std::string &out
   }
 }
 
-size_t get_num_samples(std::string fn, size_t max) {
+size_t get_num_samples(std::string fn, size_t max)
+{
   std::cout << "Counting file lines; please wait\n";
   std::ifstream in(fn.c_str());
   if (!in) {
@@ -189,7 +202,7 @@ size_t get_num_samples(std::string fn, size_t max) {
       return max;
     }
     if (n % 100000000 == 0) {
-      std::cout << n/100000000 << "*100M lines processed\n";
+      std::cout << n / 100000000 << "*100M lines processed\n";
     }
   }
   in.close();

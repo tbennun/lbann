@@ -49,11 +49,11 @@ build_constant_layer_from_pbuf(lbann_comm* comm,
     protobuf::to_vector<int>(params.num_neurons()));
 }
 
-#define PROTO_DEVICE(T, Device) \
-  template class constant_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class constant_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class constant_layer<T, data_layout::DATA_PARALLEL, Device>;        \
+  template class constant_layer<T, data_layout::MODEL_PARALLEL, Device>;       \
   LBANN_LAYER_BUILDER_ETI(constant, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

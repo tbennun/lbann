@@ -33,10 +33,10 @@ namespace lbann {
 namespace callback {
 
 template <class Archive>
-void hang::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void hang::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_rank_to_hang));
 }
 
@@ -44,9 +44,9 @@ void hang::setup(model* m)
 {
   if (m->get_comm()->am_world_master()) {
     if (m_rank_to_hang == -1) {
-      std::cout << "*** HANGING EVERY RANK IN HANG CALLBACK ***"
-                << std::endl;
-    } else {
+      std::cout << "*** HANGING EVERY RANK IN HANG CALLBACK ***" << std::endl;
+    }
+    else {
       std::cout << "*** HANGING RANK " << m_rank_to_hang
                 << " IN HANG CALLBACK ***" << std::endl;
     }
@@ -54,8 +54,9 @@ void hang::setup(model* m)
 }
 
 std::unique_ptr<callback_base>
-build_hang_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const&) {
+build_hang_callback_from_pbuf(const google::protobuf::Message& proto_msg,
+                              std::shared_ptr<lbann_summary> const&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackHang&>(proto_msg);
   return std::make_unique<hang>(params.rank());

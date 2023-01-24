@@ -34,7 +34,8 @@ using namespace lbann;
 const int Buf_size = 10000;
 const int Trainer = 0;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   world_comm_ptr comm = initialize(argc, argv);
 
   try {
@@ -45,7 +46,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (me == 0) {
-      std::vector<int> buf(Buf_size,-1);
+      std::vector<int> buf(Buf_size, -1);
       comm->send(buf.data(), Buf_size, Trainer, 1);
     }
 
@@ -53,9 +54,8 @@ int main(int argc, char *argv[]) {
       std::vector<int> buf;
       comm->recv(buf.data(), 0, Trainer, 0);
     }
-
-
-  } catch (lbann_exception& e) {
+  }
+  catch (lbann_exception& e) {
     e.print_report();
     return EXIT_FAILURE;
   }

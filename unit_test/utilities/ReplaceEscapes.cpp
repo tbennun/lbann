@@ -33,22 +33,18 @@
 #include <stdexcept>
 #include <string>
 
-namespace unit_test
-{
-namespace utilities
-{
+namespace unit_test {
+namespace utilities {
 
-namespace
-{
+namespace {
 
-std::string GetBasicReplacement(
-  std::string const& str, lbann::utils::SystemInfo const& system_info)
+std::string GetBasicReplacement(std::string const& str,
+                                lbann::utils::SystemInfo const& system_info)
 {
   if (str.size() != 2 || str[0] != '%')
     throw std::logic_error("string is not a valid pattern.");
 
-  switch (str[1])
-  {
+  switch (str[1]) {
   case 'h':
     return system_info.host_name();
   case 'p':
@@ -63,47 +59,46 @@ std::string GetBasicReplacement(
   return ""; // in case a compiler complains about no return.
 }
 
-}// namespace <anon>
+} // namespace
 
 BadSubstitutionPattern::BadSubstitutionPattern(std::string const& str)
   : std::runtime_error("Bad escape sequence: " + str)
 {}
 
-std::string replace_escapes(
-  std::string const& str, lbann::utils::SystemInfo const& system_info)
+std::string replace_escapes(std::string const& str,
+                            lbann::utils::SystemInfo const& system_info)
 {
   std::regex re("%env\\{([a-zA-Z0-9_]+)}|%[a-zA-Z]", std::regex::extended);
   std::smatch match;
   std::string outstr;
   outstr.reserve(str.size());
-  size_t start=0;
+  size_t start = 0;
 
-  do
-  {
+  do {
     // Get the string up to the first %%
     auto const end = str.find("%%", start);
-    auto tmp = str.substr(start, end-start);
+    auto tmp = str.substr(start, end - start);
 
     // Do all replacements
-    while (regex_search(tmp, match, re))
-    {
+    while (regex_search(tmp, match, re)) {
       if (match.size() != 2UL)
         throw std::logic_error("Unexpected match size");
 
       if (match[1].length() == 0)
-        tmp.replace(match.position(), match.length(),
+        tmp.replace(match.position(),
+                    match.length(),
                     GetBasicReplacement(match[0], system_info));
       else
-        tmp.replace(match.position(), match.length(),
+        tmp.replace(match.position(),
+                    match.length(),
                     system_info.env_variable_value(match[1]));
     }
     outstr += tmp + "%";
 
     // Update the starting position in the original string.
-    start = (end == std::string::npos) ? std::string::npos : end+2;
+    start = (end == std::string::npos) ? std::string::npos : end + 2;
 
-  }
-  while (start != std::string::npos);
+  } while (start != std::string::npos);
 
   // Added an extra "%"; remove it.
   outstr.pop_back();
@@ -111,5 +106,5 @@ std::string replace_escapes(
   return outstr;
 }
 
-}// namespace utilities
-}// namespace unit_test
+} // namespace utilities
+} // namespace unit_test

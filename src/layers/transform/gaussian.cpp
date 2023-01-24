@@ -29,10 +29,10 @@
 
 namespace lbann {
 
-#define PROTO_DEVICE(T, Device)                                         \
-  template class gaussian_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class gaussian_layer<T, data_layout::DATA_PARALLEL, Device>;        \
   template class gaussian_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

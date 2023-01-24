@@ -30,13 +30,13 @@
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
 #include "lbann/lbann.hpp"
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
 #include <time.h>
+#include <vector>
 
 using namespace lbann;
 
@@ -50,36 +50,33 @@ std::string usage();
 int construct_output_directories(int np);
 
 // Compute set of random (global) sample indices;
-void get_random_sample_indices(
-  const std::unordered_set<int> &exclude,
-  std::set<int> &indices,
-  int global_num_samples);
+void get_random_sample_indices(const std::unordered_set<int>& exclude,
+                               std::set<int>& indices,
+                               int global_num_samples);
 
 // Construct set of sample_IDs that should not appear in the output;
 // the intent is that, if random sample(s) were previously extracted,
 // we don't want any overlap
-void build_exclusion_set(std::unordered_set<int> &exclude);
+void build_exclusion_set(std::unordered_set<int>& exclude);
 
-void get_global_num_samples(int &num_samples, int&num_files);
+void get_global_num_samples(int& num_samples, int& num_files);
 
-void build_sample_mapping(
-  std::vector<std::string> &filenames,
-  const std::set<int> &indices,
-  std::vector<std::set<int> > &samples);
+void build_sample_mapping(std::vector<std::string>& filenames,
+                          const std::set<int>& indices,
+                          std::vector<std::set<int>>& samples);
 
-void extract_samples(
-  lbann_comm *comm,
-  const int rank,
-  const int np,
-  const std::vector<std::string> &filenames,
-  const std::vector<std::set<int> > &samples);
+void extract_samples(lbann_comm* comm,
+                     const int rank,
+                     const int np,
+                     const std::vector<std::string>& filenames,
+                     const std::vector<std::set<int>>& samples);
 
 // debug function
-void print_sample_ids(
-  const std::vector<std::string> &filenames,
-  const std::vector<std::set<int> > &samples);
+void print_sample_ids(const std::vector<std::string>& filenames,
+                      const std::vector<std::set<int>>& samples);
 //==========================================================================
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
   const int rank = comm->get_rank_in_world();
@@ -140,11 +137,14 @@ int main(int argc, char *argv[]) {
     if (master) {
       // write set of random indices to file; these can be used
       // as an exclusion set for a subsequent run
-      const std::string base_dir = arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_BASE_DIR);
+      const std::string base_dir =
+        arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_BASE_DIR);
       const std::string fn = base_dir + "/random_indices.txt";
       std::ofstream out(fn.c_str());
       if (!out) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + base_dir + "/random_indices.txt for writing");
+        throw lbann_exception(std::string{} + __FILE__ + " " +
+                              std::to_string(__LINE__) + " :: failed to open " +
+                              base_dir + "/random_indices.txt for writing");
       }
       for (auto t : indices) {
         out << t << "\n";
@@ -153,18 +153,22 @@ int main(int argc, char *argv[]) {
     }
 
     // samples[j] contains local indices for samples wrt the j-th conduit file
-    std::vector<std::set<int> > samples;
+    std::vector<std::set<int>> samples;
     std::vector<std::string> conduit_filenames;
     build_sample_mapping(conduit_filenames, indices, samples);
     num_files = samples.size();
 
     extract_samples(comm.get(), rank, np, conduit_filenames, samples);
-
-  } catch (const exception& e) {
-    std::cerr << "\n\n" << rank << " ::::: caught exception, outer try/catch: " << e.what() << "\n\n";
+  }
+  catch (const exception& e) {
+    std::cerr << "\n\n"
+              << rank
+              << " ::::: caught exception, outer try/catch: " << e.what()
+              << "\n\n";
     El::ReportException(e);
     return EXIT_FAILURE;
-  } catch (const std::exception& e) {
+  }
+  catch (const std::exception& e) {
     El::ReportException(e);
     return EXIT_FAILURE;
   }
@@ -173,7 +177,10 @@ int main(int argc, char *argv[]) {
   return EXIT_SUCCESS;
 }
 
-void get_random_sample_indices(const std::unordered_set<int> &exclude, std::set<int> &indices, int global_num_samples) {
+void get_random_sample_indices(const std::unordered_set<int>& exclude,
+                               std::set<int>& indices,
+                               int global_num_samples)
+{
   size_t num_samples = options::get()->get_int(LBANN_OPTION_NUM_SAMPLES);
   int seed = options::get()->get_int(LBANN_OPTION_RANDOM_SEED);
   srand(seed);
@@ -185,7 +192,8 @@ void get_random_sample_indices(const std::unordered_set<int> &exclude, std::set<
   }
 }
 
-std::string usage() {
+std::string usage()
+{
   std::string u =
     "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     "+++\n"
@@ -207,14 +215,17 @@ std::string usage() {
   return u;
 }
 
-void build_exclusion_set(std::unordered_set<int> &exclude) {
+void build_exclusion_set(std::unordered_set<int>& exclude)
+{
   const std::string exclude_fn = options::get()->get_string("exclude", "");
   if (exclude_fn == "") {
     return;
   }
   std::ifstream in(exclude_fn);
   if (!in) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + exclude_fn + " for reading");
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) + " :: failed to open " +
+                          exclude_fn + " for reading");
   }
   int id;
   while (in >> id) {
@@ -223,34 +234,42 @@ void build_exclusion_set(std::unordered_set<int> &exclude) {
   in.close();
 }
 
-int construct_output_directories(int np) {
+int construct_output_directories(int np)
+{
   auto& arg_parser = global_argument_parser();
-  int num_samples_per_file = arg_parser.get<int>(LBANN_OPTION_NUM_SAMPLES_PER_FILE);
+  int num_samples_per_file =
+    arg_parser.get<int>(LBANN_OPTION_NUM_SAMPLES_PER_FILE);
   int num_samples = arg_parser.get<int>(LBANN_OPTION_NUM_SAMPLES);
-  const std::string base_dir = options::get()->get_string(LBANN_OPTION_OUTPUT_BASE_DIR);
-  int num_output_dirs = ((num_samples / num_samples_per_file + 1) / np) *2;
+  const std::string base_dir =
+    options::get()->get_string(LBANN_OPTION_OUTPUT_BASE_DIR);
+  int num_output_dirs = ((num_samples / num_samples_per_file + 1) / np) * 2;
 
-  for (int j=0; j<num_output_dirs; j++) {
+  for (int j = 0; j < num_output_dirs; j++) {
     std::stringstream s1;
     s1 << "mkdir -p " << base_dir << "/" << j;
     int err = system(s1.str().c_str());
     if (err != 0) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: system call failed: " + s1.str());
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            " :: system call failed: " + s1.str());
     }
   }
   return num_output_dirs;
 }
 
-void build_sample_mapping(
-  std::vector<std::string> &filenames,
-  const std::set<int> &indices,
-  std::vector<std::set<int> > &samples) {
+void build_sample_mapping(std::vector<std::string>& filenames,
+                          const std::set<int>& indices,
+                          std::vector<std::set<int>>& samples)
+{
 
   // open index file
-  const std::string index_fn = options::get()->get_string(LBANN_OPTION_INDEX_FN);
+  const std::string index_fn =
+    options::get()->get_string(LBANN_OPTION_INDEX_FN);
   std::ifstream in(index_fn);
   if (!in) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + index_fn + " for reading");
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) + " :: failed to open " +
+                          index_fn + " for reading");
   }
 
   // get num global samples, num files, and base directory for input
@@ -261,7 +280,7 @@ void build_sample_mapping(
   in >> global_num_samples >> n_files >> input_base_dir;
 
   std::string entry;
-  getline(in, entry); //discard newline
+  getline(in, entry); // discard newline
 
   int num_valid_samples;
   std::string conduit_fn;
@@ -274,15 +293,15 @@ void build_sample_mapping(
       s >> conduit_fn >> num_valid_samples;
       end = start + num_valid_samples;
       bool found = false;
-      for (int j=start; j<end; j++) {
+      for (int j = start; j < end; j++) {
         if (indices.find(j) != indices.end()) {
           if (!found) {
-            samples.resize(samples.size()+1);
-	    const std::string f = input_base_dir + "/" + conduit_fn;
-	    filenames.push_back(f);
+            samples.resize(samples.size() + 1);
+            const std::string f = input_base_dir + "/" + conduit_fn;
+            filenames.push_back(f);
             found = true;
           }
-          samples.back().insert(j-start);
+          samples.back().insert(j - start);
         }
       }
     }
@@ -290,44 +309,56 @@ void build_sample_mapping(
   }
 }
 
-void check_invocation(bool master) {
+void check_invocation(bool master)
+{
   auto& arg_parser = global_argument_parser();
   if (arg_parser.get<std::string>(LBANN_OPTION_INDEX_FN) == "" ||
       arg_parser.get<int>(LBANN_OPTION_NUM_SAMPLES) == -1 ||
       arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_BASE_DIR) == "" ||
       arg_parser.get<int>(LBANN_OPTION_RANDOM_SEED) == -1) {
     if (master) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: improper invocation; see usage message below\n\n " + usage() + "\n\n");
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: improper invocation; see usage message below\n\n " + usage() +
+        "\n\n");
     }
   }
 }
 
-void get_global_num_samples(int &num_samples, int &num_files) {
-  const std::string index_fn = options::get()->get_string(LBANN_OPTION_INDEX_FN);
+void get_global_num_samples(int& num_samples, int& num_files)
+{
+  const std::string index_fn =
+    options::get()->get_string(LBANN_OPTION_INDEX_FN);
   std::ifstream in(index_fn);
   if (!in) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + index_fn + " for reading");
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) + " :: failed to open " +
+                          index_fn + " for reading");
   }
   in >> num_samples >> num_files;
   in.close();
 }
 
-void extract_samples(
-  lbann_comm *comm,
-  const int rank,
-  const int np,
-  const std::vector<std::string> &filenames,
-  const std::vector<std::set<int> > &samples) {
+void extract_samples(lbann_comm* comm,
+                     const int rank,
+                     const int np,
+                     const std::vector<std::string>& filenames,
+                     const std::vector<std::set<int>>& samples)
+{
 
-  const std::string base_dir = options::get()->get_string(LBANN_OPTION_OUTPUT_BASE_DIR);
+  const std::string base_dir =
+    options::get()->get_string(LBANN_OPTION_OUTPUT_BASE_DIR);
   char b[1024];
   sprintf(b, "%s/_sample_ids_%d.txt", base_dir.c_str(), rank);
   std::ofstream out_ids(b);
   if (!out_ids) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + b + " for writing");
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) + " :: failed to open " + b +
+                          " for writing");
   }
   int num_output_dirs = options::get()->get_int("num_output_dirs");
-  int num_samples_per_file = options::get()->get_int(LBANN_OPTION_NUM_SAMPLES_PER_FILE);
+  int num_samples_per_file =
+    options::get()->get_int(LBANN_OPTION_NUM_SAMPLES_PER_FILE);
   int file_id = 0;
   int dir_id = 0;
   int n_samples = 0;
@@ -339,15 +370,20 @@ void extract_samples(
   conduit::Node tmp2;
   std::string key;
 
-std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n";
+  std::cerr << rank << " samples.size: " << samples.size() << " np: " << np
+            << "\n";
 
   size_t num_processed = 0;
-  for (size_t j=rank; j<samples.size(); j+=np) {
+  for (size_t j = rank; j < samples.size(); j += np) {
     // open input conduit file
     try {
-      hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( filenames[j].c_str() );
-    } catch (...) {
-      std::cerr << rank << " :: exception hdf5_open_file_for_read; j: " << j <<  " filenames.size(): " << filenames.size() << " samples.size(): " << samples.size() << "\n";
+      hdf5_file_hnd =
+        conduit::relay::io::hdf5_open_file_for_read(filenames[j].c_str());
+    }
+    catch (...) {
+      std::cerr << rank << " :: exception hdf5_open_file_for_read; j: " << j
+                << " filenames.size(): " << filenames.size()
+                << " samples.size(): " << samples.size() << "\n";
       continue;
     }
     std::cerr << rank << " :: opened: " << filenames[j] << "\n";
@@ -356,20 +392,29 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
 
     std::vector<std::string> cnames;
     try {
-      conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-    } catch (...) {
-      std::cerr << rank << " :: exception hdf5_group_list_child_names; " << filenames[j] << "\n";
+      conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd,
+                                                      "/",
+                                                      cnames);
+    }
+    catch (...) {
+      std::cerr << rank << " :: exception hdf5_group_list_child_names; "
+                << filenames[j] << "\n";
       continue;
     }
 
     int local_idx = 0;
-    for (size_t i=0; i<cnames.size(); i++) {
+    for (size_t i = 0; i < cnames.size(); i++) {
       // is the next sample valid?
       key = "/" + cnames[i] + "/performance/success";
       try {
         conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
-      } catch (std::exception const &e) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: caught exception reading success flag for child " + std::to_string(i) + " of " + std::to_string(cnames.size()) + "; " + filenames[j] +  "\n");
+      }
+      catch (std::exception const& e) {
+        throw lbann_exception(
+          std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+          " :: caught exception reading success flag for child " +
+          std::to_string(i) + " of " + std::to_string(cnames.size()) + "; " +
+          filenames[j] + "\n");
       }
       int success = n_ok.to_int64();
 
@@ -391,20 +436,22 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
             key = cnames[i] + "/outputs/images/(0.0, 0.0)//0.0/emi";
             conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
             tmp2["/outputs/images/(0.0, 0.0)//0.0/emi"] = tmp;
-            //save_me[cnames[i]]["/outputs/images"] = tmp;
+            // save_me[cnames[i]]["/outputs/images"] = tmp;
 
             key = cnames[i] + "/outputs/images/(90.0, 0.0)//0.0/emi";
             conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
             tmp2["/outputs/images/(90.0, 0.0)//0.0/emi"] = tmp;
-            //save_me[cnames[i]]["/outputs/images"] = tmp;
+            // save_me[cnames[i]]["/outputs/images"] = tmp;
 
             key = cnames[i] + "/outputs/images/(90.0, 78.0)//0.0/emi";
             conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-            //save_me[cnames[i]]["/outputs/images"] = tmp;
+            // save_me[cnames[i]]["/outputs/images"] = tmp;
             tmp2["/outputs/images/(90.0, 78.0)//0.0/emi"] = tmp;
-
-          } catch (...) {
-            std::cerr << rank << " :: " << "exception caught during extraction; ignoring and continuing\n";
+          }
+          catch (...) {
+            std::cerr << rank << " :: "
+                      << "exception caught during extraction; ignoring and "
+                         "continuing\n";
             continue;
           }
           save_me[cnames[i]] = tmp2;
@@ -415,15 +462,19 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
               dir_id = 0;
             }
             std::stringstream fn;
-            fn << base_dir << "/" << dir_id++ << "/samples_" << rank
-               << "_" << file_id++ << ".bundle";
-            std::cerr << rank << " :: writing " << fn.str() << " file with " << n_samples << " samples\n";
+            fn << base_dir << "/" << dir_id++ << "/samples_" << rank << "_"
+               << file_id++ << ".bundle";
+            std::cerr << rank << " :: writing " << fn.str() << " file with "
+                      << n_samples << " samples\n";
             n_samples = 0;
 
             try {
               conduit::relay::io::save(save_me, fn.str(), "hdf5");
-            } catch (...) {
-              throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception conduit::relay::save()\n");
+            }
+            catch (...) {
+              throw lbann_exception(std::string{} + __FILE__ + " " +
+                                    std::to_string(__LINE__) +
+                                    " :: exception conduit::relay::save()\n");
             }
             save_me.reset();
           }
@@ -435,60 +486,74 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
     out_ids << "\n";
 
     try {
-      conduit::relay::io::hdf5_close_file( hdf5_file_hnd );
-    } catch (const exception& e) {
-       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception hdf5_close_file; " + filenames[j] + "; " + e.what());
+      conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
+    }
+    catch (const exception& e) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: exception hdf5_close_file; " + filenames[j] + "; " + e.what());
     }
 
     ++num_processed;
     if (num_processed % 10 == 0) {
-      std::cerr << rank << " :: " << num_processed << " files processed; n_samples: " << n_samples << "\n";
+      std::cerr << rank << " :: " << num_processed
+                << " files processed; n_samples: " << n_samples << "\n";
     }
-
   }
 
   // write final file
   if (n_samples) {
-      std::cerr << "writing FINAL conduit file with " << n_samples << " samples\n";
+    std::cerr << "writing FINAL conduit file with " << n_samples
+              << " samples\n";
     std::stringstream fn;
-    fn << base_dir << "/" << dir_id++ << "/samples_" << rank
-              << "_" << file_id++ << ".bundle";
+    fn << base_dir << "/" << dir_id++ << "/samples_" << rank << "_" << file_id++
+       << ".bundle";
     try {
       conduit::relay::io::save(save_me, fn.str(), "hdf5");
-    } catch (const exception& e) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception conduit::relay::save(); what: " + e.what());
+    }
+    catch (const exception& e) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: exception conduit::relay::save(); what: " + e.what());
     }
   }
 
   out_ids.close();
   comm->global_barrier();
   if (!rank) {
-    sprintf(b, "cat %s/_sample_id* > %s/sample_ids.txt", base_dir.c_str(), base_dir.c_str());
+    sprintf(b,
+            "cat %s/_sample_id* > %s/sample_ids.txt",
+            base_dir.c_str(),
+            base_dir.c_str());
     int r = system(b);
     if (r != 0) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: system call failed: " + b);
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            " :: system call failed: " + b);
     }
     sprintf(b, "rm -f %s/_sample_id*", base_dir.c_str());
     r = system(b);
     if (r != 0) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: system call failed: " + b);
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            " :: system call failed: " + b);
     }
   }
 }
 
-void print_sample_ids(
-  const std::vector<std::string> &filenames,
-  const std::vector<std::set<int> > &samples) {
+void print_sample_ids(const std::vector<std::string>& filenames,
+                      const std::vector<std::set<int>>& samples)
+{
 
   std::cerr << "filenames size: " << filenames.size() << "\n";
   std::cerr << "samples size: " << samples.size() << "\n";
-  for (size_t i=0; i<samples.size(); i++) {
+  for (size_t i = 0; i < samples.size(); i++) {
     std::cerr << "i: " << i << " num samples: " << samples[i].size() << "\n";
   }
 
   std::cerr << "==========================================\n";
   std::cerr << "sample map:\n";
-  for (size_t i=0; i<samples.size(); i++) {
+  for (size_t i = 0; i < samples.size(); i++) {
     std::cout << filenames[i] << "\n";
     for (auto t : samples[i]) {
       std::cout << t << " ";

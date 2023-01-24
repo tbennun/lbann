@@ -212,7 +212,8 @@ void PermuteLayer<T>::bp_compute()
 // protected:
 
 template <typename T>
-PermuteLayer<T>::PermuteLayer() : PermuteLayer(std::vector<int>{}) {}
+PermuteLayer<T>::PermuteLayer() : PermuteLayer(std::vector<int>{})
+{}
 
 #define PROTO(T) template class PermuteLayer<T>
 #define LBANN_INSTANTIATE_GPU_HALF

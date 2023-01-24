@@ -59,7 +59,8 @@ class LTFBCommunicationAlgorithm;
  *    - Can this be used to explore model architectures?
  *
  */
-class ltfb : public callback_base {
+class ltfb : public callback_base
+{
 public:
   /** @brief Construct the LTFB callback
    *  @param batch_interval Number of training mini-batch steps between
@@ -78,11 +79,10 @@ public:
   ltfb* copy() const override { return new ltfb(*this); }
   std::string name() const override { return "LTFB"; }
 
-  void on_train_begin(model *m) override;
-  void on_batch_begin(model *m) override;
+  void on_train_begin(model* m) override;
+  void on_batch_begin(model* m) override;
 
 private:
-
   /** @brief Metric for tournament evaluation. */
   std::string m_metric_name;
 
@@ -96,8 +96,8 @@ private:
 
 // Builder function
 std::unique_ptr<callback_base>
-build_ltfb_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+build_ltfb_callback_from_pbuf(const google::protobuf::Message&,
+                              std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

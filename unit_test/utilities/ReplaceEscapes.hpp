@@ -32,10 +32,8 @@
 #include <stdexcept>
 #include <string>
 
-namespace unit_test
-{
-namespace utilities
-{
+namespace unit_test {
+namespace utilities {
 
 //
 // NOTE TO C++ READERS: The following documentation will appear WRONG
@@ -88,15 +86,15 @@ namespace utilities
  *
  *  @returns A copy of the input string with all substitutions applied.
  */
-std::string replace_escapes(
-  std::string const& str, lbann::utils::SystemInfo const& sys_info);
+std::string replace_escapes(std::string const& str,
+                            lbann::utils::SystemInfo const& sys_info);
 
 /** @brief Indicates that an invalid pattern is detected. */
 struct BadSubstitutionPattern : std::runtime_error
 {
   BadSubstitutionPattern(std::string const& str);
-};// struct BadSubstitutionPattern
+}; // struct BadSubstitutionPattern
 
-}// namespace utilities
-}// namespace unit_test
+} // namespace utilities
+} // namespace unit_test
 #endif // LBANN_UNIT_TEST_UTILITIES_REPLACE_ESCAPES_HPP_INCLUDED

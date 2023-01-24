@@ -27,11 +27,11 @@
 
 #ifndef _TOOLS_COMPUTE_MEAN_FILE_UTILS_HPP_
 #define _TOOLS_COMPUTE_MEAN_FILE_UTILS_HPP_
+#include "lbann/utils/file_utils.hpp"
+#include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <fstream>
-#include "lbann/utils/file_utils.hpp"
 
 namespace tools_compute_mean {
 
@@ -40,21 +40,24 @@ namespace tools_compute_mean {
  * T: type of the buf, which can be std::vector<unsigned char> for binary file
  *    std::string for text file.
  */
-template<typename T = std::vector<unsigned char> >
-inline void write_file(const std::string filename, const T& buf) {
+template <typename T = std::vector<unsigned char>>
+inline void write_file(const std::string filename, const T& buf)
+{
   std::ofstream file(filename, std::ios::out | std::ios::binary);
-  file.write((const char *) buf.data(), buf.size() * sizeof(unsigned char));
+  file.write((const char*)buf.data(), buf.size() * sizeof(unsigned char));
   file.close();
 }
-
 
 /**
  * Write the contents in a given buffer into a binary file.
  * The buffer is given as a pointer and the size in bytes.
  */
-inline void write_file(const std::string filename, const unsigned char *buf, const size_t size) {
+inline void write_file(const std::string filename,
+                       const unsigned char* buf,
+                       const size_t size)
+{
   std::ofstream file(filename, std::ios::out | std::ios::binary);
-  file.write((const char *) buf, size);
+  file.write((const char*)buf, size);
   file.close();
 }
 

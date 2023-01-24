@@ -29,8 +29,7 @@
 namespace lbann {
 
 template <typename ArchiveT>
-void
-Layer::serialize(ArchiveT& ar)
+void Layer::serialize(ArchiveT& ar)
 {
   ar(CEREAL_NVP(m_expected_num_parent_layers),
      CEREAL_NVP(m_expected_num_child_layers),

@@ -41,15 +41,15 @@ build_identity_zero_layer_from_pbuf(lbann_comm* comm,
 {
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, identity_zero);
   using LayerType = identity_zero_layer<TensorDataType, Layout, Device>;
-  
+
   return std::make_unique<LayerType>(comm);
 }
 
-#define PROTO_DEVICE(T, Device) \
-  template class identity_zero_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class identity_zero_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class identity_zero_layer<T, data_layout::DATA_PARALLEL, Device>;   \
+  template class identity_zero_layer<T, data_layout::MODEL_PARALLEL, Device>;  \
   LBANN_LAYER_BUILDER_ETI(identity_zero, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

@@ -51,8 +51,8 @@ public:
 }; // class TestSystemInfo
 
 // Bring the function under test into scope.
-using unit_test::utilities::replace_escapes;
 using unit_test::utilities::BadSubstitutionPattern;
+using unit_test::utilities::replace_escapes;
 
 TEST_CASE("Subtitution of patterns in strings", "[seq][utils][testing]")
 {
@@ -68,48 +68,49 @@ TEST_CASE("Subtitution of patterns in strings", "[seq][utils][testing]")
   {
     auto pid = sys_info.pid();
     CHECK(replace_escapes("%p", sys_info) == pid);
-    CHECK(replace_escapes("%p_apple", sys_info) == pid+"_apple");
+    CHECK(replace_escapes("%p_apple", sys_info) == pid + "_apple");
     CHECK(replace_escapes("%p%p", sys_info) == pid + pid);
-    CHECK(replace_escapes("%pap%pple_%p", sys_info)
-          == pid+"ap"+pid+"ple_"+pid);
+    CHECK(replace_escapes("%pap%pple_%p", sys_info) ==
+          pid + "ap" + pid + "ple_" + pid);
   }
 
   SECTION("Substitute %h for hostname")
   {
     auto host = sys_info.host_name();
     CHECK(replace_escapes("%h", sys_info) == host);
-    CHECK(replace_escapes("Tahitian %h farm", sys_info) == "Tahitian "+host+" farm");
+    CHECK(replace_escapes("Tahitian %h farm", sys_info) ==
+          "Tahitian " + host + " farm");
     CHECK(replace_escapes("%h%h", sys_info) == host + host);
-    CHECK(replace_escapes("G%hs%hsss", sys_info) == "G"+host+"s"+host+"sss");
+    CHECK(replace_escapes("G%hs%hsss", sys_info) ==
+          "G" + host + "s" + host + "sss");
   }
 
   SECTION("Substitute %r for MPI rank")
   {
     auto rank = std::to_string(sys_info.mpi_rank());
     CHECK(replace_escapes("%r", sys_info) == rank);
-    CHECK(replace_escapes("I have %r cats", sys_info)
-          == "I have "+rank+" cats");
+    CHECK(replace_escapes("I have %r cats", sys_info) ==
+          "I have " + rank + " cats");
     CHECK(replace_escapes("%r%r", sys_info) == rank + rank);
-    CHECK(replace_escapes("G%rs%rhss", sys_info)
-          == "G"+rank+"s"+rank+"hss");
+    CHECK(replace_escapes("G%rs%rhss", sys_info) ==
+          "G" + rank + "s" + rank + "hss");
   }
 
   SECTION("Substitute %s for MPI size")
   {
     auto size = std::to_string(sys_info.mpi_size());
     CHECK(replace_escapes("%s", sys_info) == size);
-    CHECK(replace_escapes("I have %s puppies", sys_info)
-          == "I have "+size+" puppies");
+    CHECK(replace_escapes("I have %s puppies", sys_info) ==
+          "I have " + size + " puppies");
     CHECK(replace_escapes("%s%s", sys_info) == size + size);
-    CHECK(replace_escapes("G%ss%shss", sys_info)
-          == "G"+size+"s"+size+"hss");
+    CHECK(replace_escapes("G%ss%shss", sys_info) ==
+          "G" + size + "s" + size + "hss");
   }
 
   SECTION("Substitute %% for a literal %")
   {
     CHECK(replace_escapes("%%", sys_info) == "%");
-    CHECK(replace_escapes("110%% is a lie", sys_info)
-          == "110% is a lie");
+    CHECK(replace_escapes("110%% is a lie", sys_info) == "110% is a lie");
     CHECK(replace_escapes("%%%%", sys_info) == "%%");
     CHECK(replace_escapes("100%%", sys_info) == "100%");
     CHECK(replace_escapes("%%hope", sys_info) == "%hope");
@@ -123,13 +124,13 @@ TEST_CASE("Subtitution of patterns in strings", "[seq][utils][testing]")
     auto pid = sys_info.pid();
     auto host = sys_info.host_name();
     CHECK(replace_escapes("%env{PUMPKIN}", sys_info) == pumpkin);
-    CHECK(replace_escapes("%env{PUMPKIN}%env{PUMPKIN}", sys_info)
-          == pumpkin+pumpkin);
-    CHECK(replace_escapes("%env{PUMPKIN}%env{CRANBERRY}", sys_info)
-          == pumpkin+cranberry);
+    CHECK(replace_escapes("%env{PUMPKIN}%env{PUMPKIN}", sys_info) ==
+          pumpkin + pumpkin);
+    CHECK(replace_escapes("%env{PUMPKIN}%env{CRANBERRY}", sys_info) ==
+          pumpkin + cranberry);
     CHECK(replace_escapes("%%%env{THIS_IS_UNDEFINED}", sys_info) == "%");
-    CHECK(replace_escapes("eat_%env{PUMPKIN}_%h_%p.txt", sys_info)
-          == "eat_"+pumpkin+"_"+host+"_"+pid + ".txt");
+    CHECK(replace_escapes("eat_%env{PUMPKIN}_%h_%p.txt", sys_info) ==
+          "eat_" + pumpkin + "_" + host + "_" + pid + ".txt");
     CHECK(replace_escapes("%env{THIS_IS_UNDEFINED}", sys_info) == "");
   }
 

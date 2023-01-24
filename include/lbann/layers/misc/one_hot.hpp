@@ -39,11 +39,11 @@ namespace lbann {
  *  are ignored.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class one_hot_layer : public data_type_layer<TensorDataType> {
+class one_hot_layer : public data_type_layer<TensorDataType>
+{
 public:
-
-  one_hot_layer(size_t size)
-    : data_type_layer<TensorDataType>(nullptr) {
+  one_hot_layer(size_t size) : data_type_layer<TensorDataType>(nullptr)
+  {
     this->set_output_dims({static_cast<int>(size)});
   }
   one_hot_layer* copy() const override { return new one_hot_layer(*this); }
@@ -61,13 +61,11 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
 protected:
-
   friend class cereal::access;
-  one_hot_layer()
-    : one_hot_layer(0)
-  {}
+  one_hot_layer() : one_hot_layer(0) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
     // Make sure input tensor is scalar
@@ -77,24 +75,24 @@ protected:
       for (size_t i = 0; i < input_dims.size(); ++i) {
         dim_ss << (i > 0 ? "x" : "") << input_dims[i];
       }
-      LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
+      LBANN_ERROR(get_type(),
+                  " layer \"",
+                  this->get_name(),
+                  "\" ",
                   "received an input tensor with invalid dimensions ",
-                  "(expected 1, got ",dim_ss.str(),")");
+                  "(expected 1, got ",
+                  dim_ss.str(),
+                  ")");
     }
-
   }
 
   void fp_compute() override;
-
 };
 
-
 #ifndef LBANN_ONE_HOT_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device)                 \
-  extern template class one_hot_layer<          \
-    T, data_layout::DATA_PARALLEL, Device>;     \
-  extern template class one_hot_layer<          \
-    T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class one_hot_layer<T, data_layout::DATA_PARALLEL, Device>;  \
+  extern template class one_hot_layer<T, data_layout::MODEL_PARALLEL, Device>
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #endif // LBANN_ONE_HOT_LAYER_INSTANTIATE

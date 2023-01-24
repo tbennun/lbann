@@ -250,7 +250,6 @@ void construct_std_options()
                         "[STD] Divide each trainer into equally-sized "
                         "sub-grids with blocked ordering",
                         0);
-
 }
 
 void construct_datastore_options()
@@ -532,7 +531,7 @@ void construct_all_options()
   construct_std_options();
   construct_datastore_options();
   construct_datareader_options();
-  //construct_jag_options();
+  // construct_jag_options();
 }
 
 } // namespace lbann

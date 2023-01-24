@@ -31,8 +31,10 @@
 
 namespace lbann {
 
-template <typename> class data_type_optimizer;
-template <typename> class data_type_weights;
+template <typename>
+class data_type_optimizer;
+template <typename>
+class data_type_weights;
 
 /** @class l2_weight_regularization
  *  @brief Apply L2 regularization to a set of weights.
@@ -41,7 +43,8 @@ template <typename> class data_type_weights;
  *  @f[ L2(w) = \frac{1}{2} \sum\limits_{i} w(i)^2 @f]
  *  Note the @f$ 1/2 @f$ scaling factor.
  */
-class l2_weight_regularization : public objective_function_term {
+class l2_weight_regularization : public objective_function_term
+{
 public:
   using AccumulateDataType = DataType;
 
@@ -59,7 +62,10 @@ public:
    *                        @f$ \text{scale\_factor} \times \sum L2(w_i) @f$
    */
   l2_weight_regularization(EvalType scale_factor = 1);
-  l2_weight_regularization* copy() const override { return new l2_weight_regularization(*this); }
+  l2_weight_regularization* copy() const override
+  {
+    return new l2_weight_regularization(*this);
+  }
 
   /** Archive for checkpoint and restart */
   template <typename ArchiveT>
@@ -77,7 +83,7 @@ public:
    *
    *  @todo Come up with a better function name in the base class.
    */
-  void differentiate() override {};
+  void differentiate() override{};
 
   /** Compute the gradient w.r.t. the weights.
    *
@@ -86,7 +92,6 @@ public:
   void compute_weight_regularization() override;
 
 private:
-
   /** Contributions to evaluated value. */
   std::map<El::Device, CPUMatType> m_contributions;
 
@@ -106,7 +111,6 @@ private:
   template <El::Device Device>
   static void accumulate_contribution(const DMatType<Device>& vals,
                                       DMatType<Device>& contribution);
-
 };
 
 } // namespace lbann

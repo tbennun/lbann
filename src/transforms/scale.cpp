@@ -31,7 +31,8 @@
 namespace lbann {
 namespace transform {
 
-void scale::apply(utils::type_erased_matrix& data, std::vector<size_t>&) {
+void scale::apply(utils::type_erased_matrix& data, std::vector<size_t>&)
+{
   // Currently only works on DataTypes.
   // Need to decide how to handle uint8_t matrices.
   auto& mat = data.template get<DataType>();
@@ -47,10 +48,11 @@ void scale::apply(utils::type_erased_matrix& data, std::vector<size_t>&) {
 }
 
 std::unique_ptr<transform>
-build_scale_transform_from_pbuf(google::protobuf::Message const& msg) {
+build_scale_transform_from_pbuf(google::protobuf::Message const& msg)
+{
   auto const& params = dynamic_cast<lbann_data::Transform::Scale const&>(msg);
   return std::make_unique<scale>(params.scale());
 }
 
-}  // namespace transform
-}  // namespace lbann
+} // namespace transform
+} // namespace lbann

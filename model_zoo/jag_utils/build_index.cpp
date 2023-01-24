@@ -30,24 +30,26 @@
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
 #include "lbann/lbann.hpp"
 #include "lbann/utils/jag_utils.hpp"
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 using namespace lbann;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
 
   if (master) {
-    std::cout << "\n\n==============================================================\n"
-              << "STARTING " << argv[0] << " with this command line:\n";
-    for (int j=0; j<argc; j++) {
+    std::cout
+      << "\n\n==============================================================\n"
+      << "STARTING " << argv[0] << " with this command line:\n";
+    for (int j = 0; j < argc; j++) {
       std::cout << argv[j] << " ";
     }
     std::cout << std::endl << std::endl;
@@ -73,12 +75,14 @@ int main(int argc, char *argv[]) {
 
     if (argc == 1) {
       if (master) {
-        std::cout << "usage: " << argv[0] << " --filelist=<string> --base_dir=<string> --output_fn=<string>\n"
-          "where: filelist contains a list of conduit filenames;\n"
-          "       base_dir / <name from filelist> should fully specify\n"
-          "       a conduit filepath\n"
-          "function: constructs an index that lists number of samples\n"
-          "          in each file, indices of invalid samples, etc\n";
+        std::cout
+          << "usage: " << argv[0]
+          << " --filelist=<string> --base_dir=<string> --output_fn=<string>\n"
+             "where: filelist contains a list of conduit filenames;\n"
+             "       base_dir / <name from filelist> should fully specify\n"
+             "       a conduit filepath\n"
+             "function: constructs an index that lists number of samples\n"
+             "          in each file, indices of invalid samples, etc\n";
       }
       return EXIT_SUCCESS;
     }
@@ -86,12 +90,18 @@ int main(int argc, char *argv[]) {
     if (arg_parser.get<std::string>(LBANN_OPTION_FILELIST) == "" ||
         arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_FN) == "" ||
         arg_parser.get<std::string>(LBANN_OPTION_BASE_DIR)) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: improper invocation; run with no cmd line args for proper invocation");
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            " :: improper invocation; run with no cmd line "
+                            "args for proper invocation");
     }
 
-    const std::string input_fn = arg_parser.get<std::string>(LBANN_OPTION_FILELIST);
-    const std::string output_fn = arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_FN);
-    const std::string base_dir = arg_parser.get<std::string>(LBANN_OPTION_BASE_DIR);
+    const std::string input_fn =
+      arg_parser.get<std::string>(LBANN_OPTION_FILELIST);
+    const std::string output_fn =
+      arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_FN);
+    const std::string base_dir =
+      arg_parser.get<std::string>(LBANN_OPTION_BASE_DIR);
 
     int rank = comm->get_rank_in_world();
     std::stringstream ss;
@@ -99,7 +109,9 @@ int main(int argc, char *argv[]) {
     std::ofstream out(ss.str());
     std::cerr << rank << " :: opened for writing: " << ss.str() << "\n";
     if (!out.good()) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + output_fn + " for writing");
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) + " :: failed to open " +
+                            output_fn + " for writing");
     }
     if (master) {
       std::cerr << "writing index file: " << output_fn << "\n";
@@ -113,8 +125,9 @@ int main(int argc, char *argv[]) {
     int num_samples_bad = 0;
     int np = comm->get_procs_in_world();
     hid_t hdf5_file_hnd;
-    for (size_t j=rank; j<filenames.size(); j+=np) {
-if (j >= 400) break;
+    for (size_t j = rank; j < filenames.size(); j += np) {
+      if (j >= 400)
+        break;
       int local_num_samples = 0;
       int local_num_samples_bad = 0;
       std::cerr << rank << " :: processing: " << filenames[j] << "\n";
@@ -126,21 +139,26 @@ if (j >= 400) break;
         }
         const std::string sss = base_dir + '/' + fn;
         out << fn << " ";
-        hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( sss );
-      } catch (...) {
-         std::cerr << "exception hdf5_open_file_for_reading: " << filenames[j] << "\n";
-         continue;
+        hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read(sss);
+      }
+      catch (...) {
+        std::cerr << "exception hdf5_open_file_for_reading: " << filenames[j]
+                  << "\n";
+        continue;
       }
       std::vector<std::string> cnames;
       try {
-        conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-      } catch (...) {
-         std::cerr << "exception hdf5_group_list_child_names\n";
-         continue;
+        conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd,
+                                                        "/",
+                                                        cnames);
+      }
+      catch (...) {
+        std::cerr << "exception hdf5_group_list_child_names\n";
+        continue;
       }
       std::stringstream s5;
       conduit::Node n_ok;
-      for (size_t h=0; h<cnames.size(); h++) {
+      for (size_t h = 0; h < cnames.size(); h++) {
         const std::string key_1 = "/" + cnames[h] + "/performance/success";
 
         // adding this since hydra has one top-level child in each file
@@ -148,7 +166,8 @@ if (j >= 400) break;
         // sort of meta-data
         bool good = conduit::relay::io::hdf5_has_path(hdf5_file_hnd, key_1);
         if (!good) {
-          std::cerr << "missing path: " << key_1 << " (this is probably OK for hydra)\n";
+          std::cerr << "missing path: " << key_1
+                    << " (this is probably OK for hydra)\n";
           s5 << cnames[h] << " ";
           ++num_samples_bad;
           ++local_num_samples_bad;
@@ -157,26 +176,31 @@ if (j >= 400) break;
 
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key_1, n_ok);
-        } catch (...) {
-           std::cerr << "exception hdf5_read file: " << filenames[j] << "; key: " << key_1 << "\n";
-           continue;
+        }
+        catch (...) {
+          std::cerr << "exception hdf5_read file: " << filenames[j]
+                    << "; key: " << key_1 << "\n";
+          continue;
         }
         int success = n_ok.to_int64();
         if (success == 1) {
           ++num_samples;
           ++local_num_samples;
-        } else {
+        }
+        else {
           s5 << cnames[h] << " ";
           ++num_samples_bad;
           ++local_num_samples_bad;
         }
       }
-      out << local_num_samples << " " << local_num_samples_bad << " " << s5.str() << "\n";
+      out << local_num_samples << " " << local_num_samples_bad << " "
+          << s5.str() << "\n";
       try {
         conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
-      } catch (...) {
-         std::cerr << "exception hdf5_close_file\n";
-         continue;
+      }
+      catch (...) {
+        std::cerr << "exception hdf5_close_file\n";
+        continue;
       }
     }
     out.close();
@@ -184,8 +208,20 @@ if (j >= 400) break;
 
     int global_num_samples;
     int global_num_samples_bad;
-    MPI_Reduce(&num_samples, &global_num_samples, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&num_samples_bad, &global_num_samples_bad, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&num_samples,
+               &global_num_samples,
+               1,
+               MPI_INT,
+               MPI_SUM,
+               0,
+               MPI_COMM_WORLD);
+    MPI_Reduce(&num_samples_bad,
+               &global_num_samples_bad,
+               1,
+               MPI_INT,
+               MPI_SUM,
+               0,
+               MPI_COMM_WORLD);
 
     if (master) {
 
@@ -193,13 +229,15 @@ if (j >= 400) break;
       if (!out2) {
         LBANN_ERROR("failed to open output file");
       }
-      out2 << "CONDUIT_HDF5_EXCLUSION\n" << global_num_samples << " " << global_num_samples_bad
-           << " " << filenames.size() << "\n" << base_dir << "\n";
+      out2 << "CONDUIT_HDF5_EXCLUSION\n"
+           << global_num_samples << " " << global_num_samples_bad << " "
+           << filenames.size() << "\n"
+           << base_dir << "\n";
       out2.close();
 
       std::stringstream s3;
       s3 << "cat num_samples_tmp ";
-      for (int k=0; k<np; k++) {
+      for (int k = 0; k < np; k++) {
         s3 << output_fn << "." << k << " ";
       }
       s3 << "> " << output_fn;
@@ -217,16 +255,18 @@ if (j >= 400) break;
       s3.clear();
       s3.str("");
       s3 << "rm -f num_samples_tmp ";
-      for (int k=0; k<np; k++) {
+      for (int k = 0; k < np; k++) {
         s3 << output_fn << "." << k << " ";
       }
       system(s3.str().c_str());
     } // if (master)
-
-  } catch (std::exception const &e) {
-    if (master) std::cerr << "caught exception: " << e.what() << "\n";
+  }
+  catch (std::exception const& e) {
+    if (master)
+      std::cerr << "caught exception: " << e.what() << "\n";
     return EXIT_FAILURE;
-  } catch (...) {
+  }
+  catch (...) {
     std::cerr << "unknown exception in main\n";
     return EXIT_FAILURE;
   }

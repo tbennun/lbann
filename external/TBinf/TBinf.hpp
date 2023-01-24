@@ -29,20 +29,21 @@
 #ifndef TBINF_HPP_INCLUDED
 #define TBINF_HPP_INCLUDED
 
+#include "event.pb.h"
+#include "summary.pb.h"
+#include <fstream>
 #include <stdint.h>
 #include <string>
 #include <vector>
-#include <fstream>
-#include "event.pb.h"
-#include "summary.pb.h"
 
 namespace TBinf {
 
 /**
  * @brief Write data to Tensorboard logging directory in Tensorflow format.
  */
-class SummaryWriter {
- public:
+class SummaryWriter
+{
+public:
   /**
    * @brief Create a new event file in logdir to write to.
    * @param logdir The directory where the event file will be written.
@@ -66,10 +67,10 @@ class SummaryWriter {
    * @param step Optional global step.
    */
 
- void add_image(std::string const& tag,
-                std::string encoded_img,
-                const std::vector<size_t>& dims,
-                int64_t step = -1);
+  void add_image(std::string const& tag,
+                 std::string encoded_img,
+                 const std::vector<size_t>& dims,
+                 int64_t step = -1);
 
   /**
    * @brief Add a histogram of values to the event file.
@@ -95,8 +96,11 @@ class SummaryWriter {
    */
   void add_histogram(const std::string tag,
                      const std::vector<float> buckets,
-                     double min, double max, double num,
-                     double sum, double sqsum,
+                     double min,
+                     double max,
+                     double num,
+                     double sum,
+                     double sqsum,
                      int64_t step = -1);
   /** @brief Return the current histogram buckets. */
   const std::vector<double>& get_histogram_buckets() const;
@@ -106,13 +110,13 @@ class SummaryWriter {
   /** @brief Ensure all events are written out. */
   void flush();
 
- private:
+private:
   /**
    * @brief Write a summary to the event file.
    * @param s The summary to write.
    * @param step Optional global step for the event.
    */
-  void write_summary_event(tensorflow::Summary *s, int64_t step = -1);
+  void write_summary_event(tensorflow::Summary* s, int64_t step = -1);
 
   /**
    * @brief Write an event to the event file.
@@ -127,7 +131,7 @@ class SummaryWriter {
   void init_histogram_buckets();
 
   /** @brief Current event version. */
-  static constexpr const char *EVENT_VERSION = "brain.Event:2";
+  static constexpr const char* EVENT_VERSION = "brain.Event:2";
 
   /** @brief Filename to write to. */
   std::string filename;
@@ -139,6 +143,6 @@ class SummaryWriter {
   std::vector<double> histogram_buckets;
 };
 
-}  // namespace TBinf
+} // namespace TBinf
 
-#endif  // TBINF_HPP_INCLUDED
+#endif // TBINF_HPP_INCLUDED

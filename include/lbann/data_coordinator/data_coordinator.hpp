@@ -28,8 +28,8 @@
 #define LBANN_DATA_COORDINATOR_HPP
 
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
-#include "lbann/utils/dataset.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/utils/dataset.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
@@ -56,21 +56,24 @@
  */
 namespace lbann {
 
-class data_coordinator {
- public:
+class data_coordinator
+{
+public:
   using dataset_map_t = std::map<execution_mode, dataset>;
-  using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
+  using data_reader_map_t = std::map<execution_mode, generic_data_reader*>;
   using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
 
- public:
-  data_coordinator(lbann_comm *comm) :
-    m_trainer(nullptr),
-    m_comm(comm),
-    m_data_set_processed(false),
-    m_execution_context(nullptr),
-    m_io_thread_pool(nullptr) {}
+public:
+  data_coordinator(lbann_comm* comm)
+    : m_trainer(nullptr),
+      m_comm(comm),
+      m_data_set_processed(false),
+      m_execution_context(nullptr),
+      m_io_thread_pool(nullptr)
+  {}
 
-  virtual ~data_coordinator() {
+  virtual ~data_coordinator()
+  {
     // Synchronize the I/O thread pool
     // Note: The thread pool may still be running asynchronously if the
     // trainer is destroyed in the middle of an epoch. The thread pool
@@ -91,13 +94,15 @@ class data_coordinator {
       m_datasets(other.m_datasets),
       m_data_readers(other.m_data_readers),
       m_data_set_processed(other.m_data_set_processed),
-      m_execution_context(other.m_execution_context) {
+      m_execution_context(other.m_execution_context)
+  {
     for (auto& dr : m_data_readers) {
       dr.second = dr.second ? dr.second->copy() : nullptr;
     }
   }
 
-  data_coordinator& operator=(const data_coordinator& other) {
+  data_coordinator& operator=(const data_coordinator& other)
+  {
     for (auto& dr : m_data_readers) {
       dr.second = dr.second ? dr.second->copy() : nullptr;
     }
@@ -105,10 +110,14 @@ class data_coordinator {
   }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar );
+  template <class Archive>
+  void serialize(Archive& ar);
 
   /** Setup the thread pool and data readers within the data coordinator */
-  virtual void setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
+  virtual void
+  setup(thread_pool& io_thread_pool,
+        int max_mini_batch_size,
+        std::map<execution_mode, generic_data_reader*> data_readers);
 
   /** Once all of the models that are served by this data coordinator are
    *  setup and have registered which data fields are required, setup the local
@@ -116,29 +125,37 @@ class data_coordinator {
    */
   virtual void setup_data_fields(int max_mini_batch_size) = 0;
 
-  void set_trainer(trainer &trainer) { m_trainer = &trainer; }
+  void set_trainer(trainer& trainer) { m_trainer = &trainer; }
 
-  /** Check to see if there is a valid training context for the data coordinator */
-  bool has_valid_execution_context() const {
+  /** Check to see if there is a valid training context for the data coordinator
+   */
+  bool has_valid_execution_context() const
+  {
     return (m_execution_context != nullptr);
   }
 
   /** Grab the training context of the data coordinator */
-  const ExecutionContext& get_execution_context() const {
-    if(m_execution_context == nullptr) {
+  const ExecutionContext& get_execution_context() const
+  {
+    if (m_execution_context == nullptr) {
       LBANN_ERROR("execution context is not set");
     }
     return *m_execution_context;
   }
 
   /** Grab the training context of the data coordinator */
-  ExecutionContext& get_execution_context() {
-    return const_cast<ExecutionContext&>(static_cast<const data_coordinator&>(*this).get_execution_context());
+  ExecutionContext& get_execution_context()
+  {
+    return const_cast<ExecutionContext&>(
+      static_cast<const data_coordinator&>(*this).get_execution_context());
   }
 
   /** Return the I/O thread pool */
-  thread_pool& get_io_thread_pool() const {
-    if (!m_io_thread_pool) { LBANN_ERROR("m_io_thread_pool is null"); }
+  thread_pool& get_io_thread_pool() const
+  {
+    if (!m_io_thread_pool) {
+      LBANN_ERROR("m_io_thread_pool is null");
+    }
     return *m_io_thread_pool;
   }
 
@@ -159,8 +176,10 @@ class data_coordinator {
   /**
    * Return the sample indices fetched in the current mini-batch.
    */
-  virtual const El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) const = 0;
-  virtual El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) = 0;
+  virtual const El::Matrix<El::Int>*
+  get_sample_indices_per_mb(execution_mode mode) const = 0;
+  virtual El::Matrix<El::Int>*
+  get_sample_indices_per_mb(execution_mode mode) = 0;
 
   virtual size_t get_num_iterations_per_epoch(execution_mode mode) const;
 
@@ -180,41 +199,51 @@ class data_coordinator {
 
   virtual int get_world_master_mini_batch_adjustment(execution_mode mode) const;
 
-  virtual int get_current_world_master_mini_batch_adjustment(execution_mode mode, int model_rank) const;
+  virtual int
+  get_current_world_master_mini_batch_adjustment(execution_mode mode,
+                                                 int model_rank) const;
 
   //************************************************************************
   // Helper functions to access the data readers
   //************************************************************************
 
-  generic_data_reader *get_data_reader(const execution_mode mode) const {
-    generic_data_reader *data_reader = nullptr;
+  generic_data_reader* get_data_reader(const execution_mode mode) const
+  {
+    generic_data_reader* data_reader = nullptr;
     auto it = m_data_readers.find(mode);
-    if (it != m_data_readers.end()) data_reader = it->second;
+    if (it != m_data_readers.end())
+      data_reader = it->second;
     return data_reader;
   }
 
   /**
    * Get the dimensions of the underlying data.
    */
-  TargetModeDimMap get_data_dims() {
+  TargetModeDimMap get_data_dims()
+  {
     TargetModeDimMap map;
-    generic_data_reader *dr;
-    for(execution_mode mode : execution_mode_iterator()) {
+    generic_data_reader* dr;
+    for (execution_mode mode : execution_mode_iterator()) {
       dr = get_data_reader(mode);
       if (dr != nullptr) {
         map[data_reader_target_mode::INPUT] = dr->get_data_dims();
-        if(dr->has_labels()) {
-          map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, dr->get_num_labels());
-        }else {
+        if (dr->has_labels()) {
+          map[data_reader_target_mode::CLASSIFICATION] =
+            std::vector<int>(1, dr->get_num_labels());
+        }
+        else {
           map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, 0);
         }
-        if(dr->has_responses()) {
-          map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, dr->get_num_responses());
-        }else {
+        if (dr->has_responses()) {
+          map[data_reader_target_mode::REGRESSION] =
+            std::vector<int>(1, dr->get_num_responses());
+        }
+        else {
           map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, 0);
         }
         map[data_reader_target_mode::RECONSTRUCTION] = dr->get_data_dims();
-        map[data_reader_target_mode::LABEL_RECONSTRUCTION] = dr->get_data_dims();
+        map[data_reader_target_mode::LABEL_RECONSTRUCTION] =
+          dr->get_data_dims();
         map[data_reader_target_mode::NA] = std::vector<int>(1, 0);
         return map;
       }
@@ -226,16 +255,18 @@ class data_coordinator {
   /**
    * Get the dimensions of the underlying data.
    */
-  SPModeSlicePoints get_slice_points() {
+  SPModeSlicePoints get_slice_points()
+  {
     SPModeSlicePoints map;
-    generic_data_reader *dr;
-    for(execution_mode mode : execution_mode_iterator()) {
+    generic_data_reader* dr;
+    for (execution_mode mode : execution_mode_iterator()) {
       dr = get_data_reader(mode);
       if (dr != nullptr) {
-        for(slice_points_mode sp_mode : slice_points_mode_iterator()) {
+        for (slice_points_mode sp_mode : slice_points_mode_iterator()) {
           bool is_supported;
-          std::vector<El::Int> tmp = dr->get_slice_points(sp_mode, is_supported);
-          if(is_supported) {
+          std::vector<El::Int> tmp =
+            dr->get_slice_points(sp_mode, is_supported);
+          if (is_supported) {
             map[sp_mode] = tmp;
           }
         }
@@ -246,7 +277,8 @@ class data_coordinator {
     return {};
   }
 
-  DataReaderMetaData get_dr_metadata() {
+  DataReaderMetaData get_dr_metadata()
+  {
     DataReaderMetaData drm;
     drm.data_dims = get_data_dims();
     drm.slice_points = get_slice_points();
@@ -260,14 +292,17 @@ class data_coordinator {
   /**
    * Check to see if the data readers have labels
    */
-  bool has_labels() {
+  bool has_labels()
+  {
     bool flag = false;
-    generic_data_reader *dr;
-    for(auto mode : execution_mode_iterator()) {
+    generic_data_reader* dr;
+    for (auto mode : execution_mode_iterator()) {
       dr = get_data_reader(mode);
       if (dr != nullptr) {
         flag = dr->has_labels();
-        if(flag) { return flag; }
+        if (flag) {
+          return flag;
+        }
       }
     }
     return flag;
@@ -276,14 +311,17 @@ class data_coordinator {
   /**
    * Check to see if the data readers have responses
    */
-  bool has_responses() {
+  bool has_responses()
+  {
     bool flag = false;
-    generic_data_reader *dr;
-    for(auto mode : execution_mode_iterator()) {
+    generic_data_reader* dr;
+    for (auto mode : execution_mode_iterator()) {
       dr = get_data_reader(mode);
       if (dr != nullptr) {
         flag = dr->has_responses();
-        if(flag) { return flag; }
+        if (flag) {
+          return flag;
+        }
       }
     }
     return flag;
@@ -317,18 +355,24 @@ class data_coordinator {
   /**
    * Get the linearized size of the underlying data.
    */
-  long get_linearized_data_size() const {
+  long get_linearized_data_size() const
+  {
     long linearized_data_size = -1;
-    generic_data_reader *dr;
-    for(auto mode : execution_mode_iterator()) {
+    generic_data_reader* dr;
+    for (auto mode : execution_mode_iterator()) {
       dr = get_data_reader(mode);
       if (dr != nullptr) {
         long tmp_data_size = dr->get_linearized_data_size();
-        if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
-          LBANN_ERROR("data_coordinator: ", to_string(mode),
-                      " data set size (", std::to_string(tmp_data_size),
-                      ") does not match the currently established data set size (",
-                      std::to_string(linearized_data_size), ")");
+        if (linearized_data_size != -1 &&
+            linearized_data_size != tmp_data_size) {
+          LBANN_ERROR(
+            "data_coordinator: ",
+            to_string(mode),
+            " data set size (",
+            std::to_string(tmp_data_size),
+            ") does not match the currently established data set size (",
+            std::to_string(linearized_data_size),
+            ")");
         }
         linearized_data_size = tmp_data_size;
       }
@@ -339,18 +383,24 @@ class data_coordinator {
   /**
    * Get the linearized size of the labels for the underlying data.
    */
-  long get_linearized_label_size() const {
+  long get_linearized_label_size() const
+  {
     long linearized_label_size = -1;
-    generic_data_reader *dr;
-    for(auto mode : execution_mode_iterator()) {
+    generic_data_reader* dr;
+    for (auto mode : execution_mode_iterator()) {
       dr = get_data_reader(mode);
       if (dr != nullptr) {
         long tmp_label_size = dr->get_linearized_label_size();
-        if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
-          LBANN_ERROR("data_coordinator: ", to_string(mode),
-                      " label set size (", std::to_string(tmp_label_size),
-                      ") does not match the currently established data set size (",
-                      std::to_string(linearized_label_size), ")");
+        if (linearized_label_size != -1 &&
+            linearized_label_size != tmp_label_size) {
+          LBANN_ERROR(
+            "data_coordinator: ",
+            to_string(mode),
+            " label set size (",
+            std::to_string(tmp_label_size),
+            ") does not match the currently established data set size (",
+            std::to_string(linearized_label_size),
+            ")");
         }
         linearized_label_size = tmp_label_size;
       }
@@ -361,18 +411,24 @@ class data_coordinator {
   /**
    * Get the linearized size of the responses for the underlying data.
    */
-  long get_linearized_response_size() const {
+  long get_linearized_response_size() const
+  {
     long linearized_response_size = -1;
-    generic_data_reader *dr;
-    for(auto mode : execution_mode_iterator()) {
+    generic_data_reader* dr;
+    for (auto mode : execution_mode_iterator()) {
       dr = get_data_reader(mode);
       if (dr != nullptr) {
         long tmp_response_size = dr->get_linearized_response_size();
-        if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
-          LBANN_ERROR("data_coordinator: ", to_string(mode),
-                      " response set size (", std::to_string(tmp_response_size),
-                      ") does not match the currently established data set size (",
-                      std::to_string(linearized_response_size), ")");
+        if (linearized_response_size != -1 &&
+            linearized_response_size != tmp_response_size) {
+          LBANN_ERROR(
+            "data_coordinator: ",
+            to_string(mode),
+            " response set size (",
+            std::to_string(tmp_response_size),
+            ") does not match the currently established data set size (",
+            std::to_string(linearized_response_size),
+            ")");
         }
         linearized_response_size = tmp_response_size;
       }
@@ -382,25 +438,30 @@ class data_coordinator {
 
   // At the start of the epoch, set the execution mode and make sure
   // that each layer points to this model
-  void reset_mode(ExecutionContext& context) {
+  void reset_mode(ExecutionContext& context)
+  {
     m_execution_context = static_cast<observer_ptr<ExecutionContext>>(&context);
   }
 
   /** @name Helper functions to access the dataset statistics */
-///@{
-   /** @brief Return the dataset for the given execution mode. */
-  dataset& get_dataset(execution_mode m) {
-    if(m_datasets.count(m)) {
+  ///@{
+  /** @brief Return the dataset for the given execution mode. */
+  dataset& get_dataset(execution_mode m)
+  {
+    if (m_datasets.count(m)) {
       return m_datasets.at(m);
-    }else {
+    }
+    else {
       LBANN_ERROR("get_dataset: invalid execution mode");
     }
   }
 
-  const dataset& get_dataset(execution_mode m) const {
-    if(m_datasets.count(m)) {
+  const dataset& get_dataset(execution_mode m) const
+  {
+    if (m_datasets.count(m)) {
       return m_datasets.at(m);
-    }else {
+    }
+    else {
       LBANN_ERROR("get_dataset: invalid execution mode");
     }
   }
@@ -409,27 +470,31 @@ class data_coordinator {
    * Return the first dataset with a valid (non-null) datareader.
    * Returns null if none are valid.
    */
-  dataset* select_first_valid_dataset() {
-    for(auto m : execution_mode_iterator()) {
-      if(m_datasets.count(m)) {
+  dataset* select_first_valid_dataset()
+  {
+    for (auto m : execution_mode_iterator()) {
+      if (m_datasets.count(m)) {
         return &m_datasets.at(m);
       }
     }
     return nullptr;
   }
 
-
-  long get_num_samples(execution_mode m) const {
-    if(m_datasets.count(m)) {
+  long get_num_samples(execution_mode m) const
+  {
+    if (m_datasets.count(m)) {
       return m_datasets.at(m).get_num_samples_processed();
-    }else {
+    }
+    else {
       return 0;
     }
   }
-  long get_total_num_samples(execution_mode m) const {
-    if(m_datasets.count(m)) {
+  long get_total_num_samples(execution_mode m) const
+  {
+    if (m_datasets.count(m)) {
       return m_datasets.at(m).get_total_samples();
-    }else {
+    }
+    else {
       return 0;
     }
   }
@@ -437,41 +502,52 @@ class data_coordinator {
   /**
    * Update the number of samples processed for the current execution mode.
    */
-  long update_num_samples_processed(execution_mode mode, long num_samples) {
+  long update_num_samples_processed(execution_mode mode, long num_samples)
+  {
     dataset& ds = get_dataset(mode);
     ds.num_samples_processed() += num_samples;
     return ds.get_num_samples_processed();
   }
 
   /** @brief Check if the execution mode is valid (i.e. has data). */
-  bool is_execution_mode_valid(execution_mode mode) const {
+  bool is_execution_mode_valid(execution_mode mode) const
+  {
     return (get_total_num_samples(mode) != static_cast<long>(0));
   }
-///@}
+  ///@}
 
   //************************************************************************
   //
   //************************************************************************
 
-  void calculate_num_iterations_per_epoch(int max_mini_batch_size, generic_data_reader *data_reader);
+  void calculate_num_iterations_per_epoch(int max_mini_batch_size,
+                                          generic_data_reader* data_reader);
   void calculate_num_iterations_per_epoch(int mini_batch_size);
 
-  int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const;
-  static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
+  int compute_max_num_parallel_readers(
+    long data_set_size,
+    int mini_batch_size,
+    int requested_num_parallel_readers) const;
+  static int
+  compute_max_num_parallel_readers(long data_set_size,
+                                   int mini_batch_size,
+                                   int requested_num_parallel_readers,
+                                   const lbann_comm* comm);
 
-  virtual int get_num_parallel_readers(execution_mode mode) const {
-    const generic_data_reader *data_reader = get_data_reader(mode);
-    return (data_reader != nullptr) ? data_reader->get_num_parallel_readers() : 0;
+  virtual int get_num_parallel_readers(execution_mode mode) const
+  {
+    const generic_data_reader* data_reader = get_data_reader(mode);
+    return (data_reader != nullptr) ? data_reader->get_num_parallel_readers()
+                                    : 0;
   }
 
-  bool at_new_epoch(execution_mode mode) const {
-    const generic_data_reader *dr = get_data_reader(mode);
+  bool at_new_epoch(execution_mode mode) const
+  {
+    const generic_data_reader* dr = get_data_reader(mode);
     return (dr != nullptr && dr->at_new_epoch());
   }
 
-  bool at_new_epoch() const {
-    return at_new_epoch(execution_mode::training);
-  }
+  bool at_new_epoch() const { return at_new_epoch(execution_mode::training); }
 
   virtual void register_active_data_field(data_field_type const data_field)
   {
@@ -489,25 +565,26 @@ class data_coordinator {
   virtual bool save_to_checkpoint_distributed(persist& p) const;
   virtual bool load_from_checkpoint_distributed(persist& p);
 
- protected:
+protected:
   /** Pointer to hosting trainer */
-  trainer *m_trainer;
+  trainer* m_trainer;
   /** Pointer to LBANN communicator. */
-  lbann_comm *m_comm;
+  lbann_comm* m_comm;
 
   /// Datasets hold the active statistics and metadata for each data reader
   dataset_map_t m_datasets;
 
   data_reader_map_t m_data_readers;
- //  std::map<execution_mode, dataset_stats> m_dataset_stats;
+  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
 
   std::set<data_field_type> m_active_data_fields;
 
-public:  // @todo BVE FIXME
+public: // @todo BVE FIXME
   bool m_data_set_processed;
   std::mutex dr_mutex;
 
-  /** Pointer to the execution context object used for training or evaluating this model */
+  /** Pointer to the execution context object used for training or evaluating
+   * this model */
   observer_ptr<ExecutionContext> m_execution_context;
 
   observer_ptr<thread_pool> m_io_thread_pool;

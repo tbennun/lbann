@@ -30,29 +30,32 @@
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
 #include "lbann/lbann.hpp"
-#include <time.h>
 #include "lbann/utils/jag_utils.hpp"
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <time.h>
+#include <vector>
 
 using namespace lbann;
 
-void get_input_names(std::unordered_set<std::string> &s);
-void get_scalar_names(std::unordered_set<std::string> &s);
-void get_image_names(std::unordered_set<std::string> &s);
+void get_input_names(std::unordered_set<std::string>& s);
+void get_scalar_names(std::unordered_set<std::string>& s);
+void get_image_names(std::unordered_set<std::string>& s);
 //==========================================================================
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
   const int np = comm->get_procs_in_world();
 
   if (np > 1) {
     if (master) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: please run with a single processor\n");
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            " :: please run with a single processor\n");
     }
   }
 
@@ -75,11 +78,16 @@ int main(int argc, char *argv[]) {
   // sanity check invocation
   if (arg_parser.get<std::string>(LBANN_OPTION_FILENAME) == "") {
     if (master) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filename=<string>\ne.g: --filename=/p/lscratchh/brainusr/datasets/conduit_test/from_100M.bundle");
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) + " :: usage: " + argv[0] +
+                            " --filename=<string>\ne.g: "
+                            "--filename=/p/lscratchh/brainusr/datasets/"
+                            "conduit_test/from_100M.bundle");
     }
   }
 
-  const std::string filename = arg_parser.get<std::string>(LBANN_OPTION_FILENAME);
+  const std::string filename =
+    arg_parser.get<std::string>(LBANN_OPTION_FILENAME);
 
   // get lists of inputs and scalars to read from file
   std::unordered_set<std::string> input_names;
@@ -127,12 +135,13 @@ int main(int argc, char *argv[]) {
         conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
       }
     }
-    }
+  }
 
   return 0;
 }
 
-void get_input_names(std::unordered_set<std::string> &s) {
+void get_input_names(std::unordered_set<std::string>& s)
+{
   s.insert("shape_model_initial_modes:(4,3)");
   s.insert("betti_prl15_trans_u");
   s.insert("betti_prl15_trans_v");
@@ -140,7 +149,8 @@ void get_input_names(std::unordered_set<std::string> &s) {
   s.insert("shape_model_initial_modes:(1,0)");
 }
 
-void get_scalar_names(std::unordered_set<std::string> &s) {
+void get_scalar_names(std::unordered_set<std::string>& s)
+{
   s.insert("BWx");
   s.insert("BT");
   s.insert("tMAXt");
@@ -165,7 +175,8 @@ void get_scalar_names(std::unordered_set<std::string> &s) {
   s.insert("MINradius");
 }
 
-void get_image_names(std::unordered_set<std::string> &s) {
+void get_image_names(std::unordered_set<std::string>& s)
+{
   s.insert("(0.0, 0.0)//0.0/emi");
   s.insert("(90.0, 0.0)//0.0/emi");
   s.insert("(90.0, 78.0)//0.0/emi");

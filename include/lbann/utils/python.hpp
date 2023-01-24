@@ -79,10 +79,12 @@ void check_error(bool force_error = false);
  *
  *  If an Python session is not running, one is started.
  */
-class global_interpreter_lock {
+class global_interpreter_lock
+{
 public:
   global_interpreter_lock();
   ~global_interpreter_lock();
+
 private:
   global_interpreter_lock(const global_interpreter_lock&) = delete;
   global_interpreter_lock& operator=(const global_interpreter_lock&) = delete;
@@ -109,9 +111,9 @@ private:
  *
  *  for an explanation of reference counts.
  */
-class object {
+class object
+{
 public:
-
   /** @brief Take ownership of a Python object pointer.
    *  @details @a Steals the reference.
    */
@@ -136,11 +138,11 @@ public:
   ~object();
 
   /** @returns @a Borrowed reference. */
-  inline PyObject* get() noexcept                  { return m_ptr; }
+  inline PyObject* get() noexcept { return m_ptr; }
   /** @returns @a Borrowed reference. */
-  inline const PyObject* get() const noexcept      { return m_ptr; }
+  inline const PyObject* get() const noexcept { return m_ptr; }
   /** @returns @a Borrowed reference. */
-  inline operator PyObject*() noexcept             { return get(); }
+  inline operator PyObject*() noexcept { return get(); }
   /** @returns @a Borrowed reference. */
   inline operator const PyObject*() const noexcept { return get(); }
 
@@ -157,10 +159,8 @@ public:
   operator double();
 
 private:
-
   /** Python object pointer. */
   PyObject* m_ptr = nullptr;
-
 };
 
 } // namespace python

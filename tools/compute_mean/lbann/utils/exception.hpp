@@ -29,42 +29,41 @@
 #ifndef LBANN_EXCEPTION_HPP_INCLUDED
 #define LBANN_EXCEPTION_HPP_INCLUDED
 
-#include <iostream>
 #include <exception>
+#include <iostream>
 #include <sstream>
 
 // Macro to throw an LBANN exception
-#define LBANN_ERROR(message)                                    \
-  do {                                                          \
-    std::stringstream ss_LBANN_ERROR;                           \
-    ss_LBANN_ERROR << "LBANN error ";                           \
-    ss_LBANN_ERROR << "(" << __FILE__ << ":" << __LINE__ << ")" \
-                     << ": " << (message);                      \
-    throw lbann::lbann_exception(ss_LBANN_ERROR.str());               \
+#define LBANN_ERROR(message)                                                   \
+  do {                                                                         \
+    std::stringstream ss_LBANN_ERROR;                                          \
+    ss_LBANN_ERROR << "LBANN error ";                                          \
+    ss_LBANN_ERROR << "(" << __FILE__ << ":" << __LINE__ << ")"                \
+                   << ": " << (message);                                       \
+    throw lbann::lbann_exception(ss_LBANN_ERROR.str());                        \
   } while (0)
 
 // Macro to print a warning to standard error stream.
-#define LBANN_WARNING(message)                                          \
-  do {                                                                  \
-    std::stringstream ss_LBANN_WARNING;                                 \
-    ss_LBANN_WARNING << "LBANN warning ";                               \
-    ss_LBANN_WARNING << "(" << __FILE__ << ":" << __LINE__ << ")"       \
-                     << ": " << (message) << std::endl;                 \
-    std::cerr << ss_LBANN_WARNING.str();                                \
+#define LBANN_WARNING(message)                                                 \
+  do {                                                                         \
+    std::stringstream ss_LBANN_WARNING;                                        \
+    ss_LBANN_WARNING << "LBANN warning ";                                      \
+    ss_LBANN_WARNING << "(" << __FILE__ << ":" << __LINE__ << ")"              \
+                     << ": " << (message) << std::endl;                        \
+    std::cerr << ss_LBANN_WARNING.str();                                       \
   } while (0)
 
 namespace lbann {
-class lbann_exception : public std::exception {
- public:
-  lbann_exception(const std::string m="my custom exception"):msg(m) {}
+class lbann_exception : public std::exception
+{
+public:
+  lbann_exception(const std::string m = "my custom exception") : msg(m) {}
   ~lbann_exception() override {}
-  const char *what() const noexcept override {
-    return msg.c_str();
-  }
+  const char* what() const noexcept override { return msg.c_str(); }
 
- private:
+private:
   std::string msg;
 };
-}
+} // namespace lbann
 
 #endif // LBANN_EXCEPTION_HPP_INCLUDED

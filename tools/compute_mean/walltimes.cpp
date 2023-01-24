@@ -25,11 +25,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <mpi.h>
+#include "walltimes.hpp"
 #include <cmath>
 #include <iostream>
-#include "walltimes.hpp"
-
+#include <mpi.h>
 
 namespace tools_compute_mean {
 
@@ -44,7 +43,8 @@ void collect_times(const std::vector<double>& localTimes,
                    std::vector<double>& minTimes,
                    std::vector<double>& maxTimes,
                    std::vector<double>& stdTimes,
-                   const mpi_states& ms) {
+                   const mpi_states& ms)
+{
   const unsigned int numTimes = localTimes.size();
   if (numTimes == 0u) {
     return;
@@ -61,52 +61,73 @@ void collect_times(const std::vector<double>& localTimes,
   std::vector<double> diffTimes(numTimes);
 
   int mc = MPI_SUCCESS;
-  mc = MPI_Allreduce(const_cast<void*>(_ConstVoidP(&localTimes[0])), _VoidP(&avgTimes[0]),
-                     numTimes, MPI_DOUBLE, MPI_SUM, ms.get_comm());
+  mc = MPI_Allreduce(const_cast<void*>(_ConstVoidP(&localTimes[0])),
+                     _VoidP(&avgTimes[0]),
+                     numTimes,
+                     MPI_DOUBLE,
+                     MPI_SUM,
+                     ms.get_comm());
   ms.check_mpi(mc);
 
-  for (unsigned int i=0u; i < numTimes; ++i) {
-    avgTimes[i] = avgTimes[i]/ms.get_effective_num_ranks();
+  for (unsigned int i = 0u; i < numTimes; ++i) {
+    avgTimes[i] = avgTimes[i] / ms.get_effective_num_ranks();
     double diff = (avgTimes[i] - localTimes[i]);
-    diffTimes[i] = diff*diff;
+    diffTimes[i] = diff * diff;
   }
 
-  mc = MPI_Reduce(const_cast<void*>(_ConstVoidP(&localTimes[0])), _VoidP(&minTimes[0]),
-                  numTimes, MPI_DOUBLE, MPI_MIN, ms.m_root, ms.get_comm());
+  mc = MPI_Reduce(const_cast<void*>(_ConstVoidP(&localTimes[0])),
+                  _VoidP(&minTimes[0]),
+                  numTimes,
+                  MPI_DOUBLE,
+                  MPI_MIN,
+                  ms.m_root,
+                  ms.get_comm());
   ms.check_mpi(mc);
 
-  mc = MPI_Reduce(const_cast<void*>(_ConstVoidP(&localTimes[0])), _VoidP(&maxTimes[0]),
-                  numTimes, MPI_DOUBLE, MPI_MAX, ms.m_root, ms.get_comm());
+  mc = MPI_Reduce(const_cast<void*>(_ConstVoidP(&localTimes[0])),
+                  _VoidP(&maxTimes[0]),
+                  numTimes,
+                  MPI_DOUBLE,
+                  MPI_MAX,
+                  ms.m_root,
+                  ms.get_comm());
   ms.check_mpi(mc);
 
-  mc = MPI_Reduce(const_cast<void*>(_ConstVoidP(&diffTimes[0])), _VoidP(&stdTimes[0]),
-                  numTimes, MPI_DOUBLE, MPI_SUM, ms.m_root, ms.get_comm());
+  mc = MPI_Reduce(const_cast<void*>(_ConstVoidP(&diffTimes[0])),
+                  _VoidP(&stdTimes[0]),
+                  numTimes,
+                  MPI_DOUBLE,
+                  MPI_SUM,
+                  ms.m_root,
+                  ms.get_comm());
   ms.check_mpi(mc);
 
-  for (unsigned int i=0u; i < numTimes; ++i) {
-    stdTimes[i] = sqrt(stdTimes[i]/ms.get_effective_num_ranks());
+  for (unsigned int i = 0u; i < numTimes; ++i) {
+    stdTimes[i] = sqrt(stdTimes[i] / ms.get_effective_num_ranks());
   }
 }
 
-
 /// print out the wallclock times
-void summarize_walltimes(walltimes& wt, mpi_states& ms) {
+void summarize_walltimes(walltimes& wt, mpi_states& ms)
+{
   if (ms.is_serial_run()) {
     const std::vector<std::string> names = wt.get_names();
     const std::vector<double> times = wt.get();
     std::cout << "name\ttime" << std::endl;
-    for (size_t i=0u; i < times.size(); ++i) {
+    for (size_t i = 0u; i < times.size(); ++i) {
       std::cout << names[i] << '\t' << times[i] << std::endl;
     }
-  } else {
+  }
+  else {
     std::vector<double> avgTimes, minTimes, maxTimes, stdTimes;
     collect_times(wt.get(), avgTimes, minTimes, maxTimes, stdTimes, ms);
     const std::vector<std::string> names = wt.get_names();
     if (ms.is_root()) {
       const size_t num_times = avgTimes.size();
       std::cout << "name\tavg\tmin\tmax\tstddev" << std::endl;
-      for (size_t i=0u; i < num_times; ++i) {
-        std::cout << names[i] << '\t' << avgTimes[i] << '\t' << minTimes[i] << '\t' << maxTimes[i] << '\t' << stdTimes[i] << std::endl;
+      for (size_t i = 0u; i < num_times; ++i) {
+        std::cout << names[i] << '\t' << avgTimes[i] << '\t' << minTimes[i]
+                  << '\t' << maxTimes[i] << '\t' << stdTimes[i] << std::endl;
       }
     }
   }

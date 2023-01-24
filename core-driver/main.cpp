@@ -29,7 +29,8 @@
 #include <mpi.h>
 #include <stdio.h>
 
-void construct_opts(int argc, char **argv) {
+void construct_opts(int argc, char** argv)
+{
   auto& arg_parser = lbann::global_argument_parser();
   arg_parser.add_option("samples",
                         {"-n"},
@@ -39,37 +40,30 @@ void construct_opts(int argc, char **argv) {
                         {"-c"},
                         "Number of image channels in sample",
                         1);
-  arg_parser.add_option("height",
-                        {"-h"},
-                        "Height of image in sample",
-                        28);
-  arg_parser.add_option("width",
-                        {"-w"},
-                        "Width of image in sample",
-                        28);
-  arg_parser.add_option("labels",
-                        {"-l"},
-                        "Number of labels in dataset",
-                        10);
+  arg_parser.add_option("height", {"-h"}, "Height of image in sample", 28);
+  arg_parser.add_option("width", {"-w"}, "Width of image in sample", 28);
+  arg_parser.add_option("labels", {"-l"}, "Number of labels in dataset", 10);
   arg_parser.add_option("minibatchsize",
                         {"-mbs"},
                         "Number of samples in a mini-batch",
                         16);
-  arg_parser.add_required_argument<std::string>
-                                  ("model",
-                                   "Directory containing checkpointed model");
+  arg_parser.add_required_argument<std::string>(
+    "model",
+    "Directory containing checkpointed model");
   arg_parser.parse(argc, argv);
 }
 
 El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>
-random_samples(El::Grid const& g, int n, int c, int h, int w) {
+random_samples(El::Grid const& g, int n, int c, int h, int w)
+{
   El::DistMatrix<float, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>
     samples(n, c * h * w, g);
   El::MakeUniform(samples);
   return samples;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv)
+{
   // Initialize MPI
   int provided;
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
@@ -99,25 +93,22 @@ int main(int argc, char **argv) {
   auto m = lbann::load_inference_model(lbann_comm.get(),
                                        arg_parser.get<std::string>("model"),
                                        arg_parser.get<int>("minibatchsize"),
-                                       {
-                                         arg_parser.get<int>("channels"),
-                                         arg_parser.get<int>("height"),
-                                         arg_parser.get<int>("width")
-                                       },
+                                       {arg_parser.get<int>("channels"),
+                                        arg_parser.get<int>("height"),
+                                        arg_parser.get<int>("width")},
                                        {arg_parser.get<int>("labels")});
   auto samples = random_samples(lbann_comm->get_trainer_grid(),
                                 arg_parser.get<int>("samples"),
                                 arg_parser.get<int>("channels"),
                                 arg_parser.get<int>("height"),
                                 arg_parser.get<int>("width"));
-  auto labels = lbann::infer(m.get(),
-                             samples,
-                             arg_parser.get<int>("minibatchsize"));
+  auto labels =
+    lbann::infer(m.get(), samples, arg_parser.get<int>("minibatchsize"));
 
   // Print inference results
   if (lbann_comm->am_world_master()) {
     std::cout << "Predicted Labels: ";
-    for (int i=0; i<labels.Height(); i++) {
+    for (int i = 0; i < labels.Height(); i++) {
       std::cout << labels(i) << " ";
     }
     std::cout << std::endl;

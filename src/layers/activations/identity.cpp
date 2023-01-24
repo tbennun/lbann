@@ -32,14 +32,14 @@ namespace lbann {
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void identity_distconv_adapter<TensorDataType, Layout, Device>::
-setup_distributions(tensor_overlap_constraints &constraints) {
-  data_type_distconv_adapter<TensorDataType>::setup_distributions(
-      constraints);
+  setup_distributions(tensor_overlap_constraints& constraints)
+{
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(constraints);
 
-  auto &x = this->get_prev_activations_dist();
-  auto &y = this->get_activations_dist();
-  auto &dx = this->get_error_signals_dist();
-  auto &dy = this->get_prev_error_signals_dist();
+  auto& x = this->get_prev_activations_dist();
+  auto& y = this->get_activations_dist();
+  auto& dx = this->get_error_signals_dist();
+  auto& dy = this->get_prev_error_signals_dist();
 
   // x == y
   constraints.mark_equivalent(x, y);
@@ -48,28 +48,34 @@ setup_distributions(tensor_overlap_constraints &constraints) {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<typename identity_distconv_adapter<TensorDataType, Layout, Device>::TensorDevType>
-identity_distconv_adapter<TensorDataType, Layout, Device>::
-setup_activations_i(int index) const {
+std::unique_ptr<typename identity_distconv_adapter<TensorDataType,
+                                                   Layout,
+                                                   Device>::TensorDevType>
+identity_distconv_adapter<TensorDataType, Layout, Device>::setup_activations_i(
+  int index) const
+{
   assert_eq(index, 0);
-  const auto &prev_activations = this->get_prev_activations(0);
+  const auto& prev_activations = this->get_prev_activations(0);
   return std::make_unique<TensorDevType>(prev_activations);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<typename identity_distconv_adapter<TensorDataType, Layout, Device>::TensorDevType>
+std::unique_ptr<typename identity_distconv_adapter<TensorDataType,
+                                                   Layout,
+                                                   Device>::TensorDevType>
 identity_distconv_adapter<TensorDataType, Layout, Device>::
-setup_error_signals_i(int index) const {
+  setup_error_signals_i(int index) const
+{
   assert_eq(index, 0);
-  const auto &prev_error_signals = this->get_prev_error_signals(0);
+  const auto& prev_error_signals = this->get_prev_error_signals(0);
   return std::make_unique<TensorDevType>(prev_error_signals);
 }
 #endif // LBANN_HAS_DISTCONV
 
-#define PROTO_DEVICE(T, Device) \
-  template class identity_layer<T, data_layout::DATA_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class identity_layer<T, data_layout::DATA_PARALLEL, Device>;        \
   template class identity_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

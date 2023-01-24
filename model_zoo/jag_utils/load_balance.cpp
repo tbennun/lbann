@@ -30,17 +30,18 @@
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
 #include "lbann/lbann.hpp"
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
 #include <time.h>
+#include <vector>
 
 using namespace lbann;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
   const int rank = comm->get_rank_in_world();
@@ -69,23 +70,31 @@ int main(int argc, char *argv[]) {
         arg_parser.get<int>(LBANN_OPTION_NUM_SUBDIRS) == -1 ||
         arg_parser.get<int>(LBANN_OPTION_SAMPLES_PER_FILE) == -1) {
       if (master) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string> --output_base_dir=<string> --num_subdirs=<int> --samples_per_file=<int>");
+        throw lbann_exception(std::string{} + __FILE__ + " " +
+                              std::to_string(__LINE__) +
+                              " :: usage: " + argv[0] +
+                              " --filelist=<string> --output_base_dir=<string> "
+                              "--num_subdirs=<int> --samples_per_file=<int>");
       }
     }
 
     const int num_dirs = arg_parser.get<int>(LBANN_OPTION_NUM_SUBDIRS);
-    const std::string base = arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_BASE_DIR);
-    const int samples_per_file = arg_parser.get<int>(LBANN_OPTION_SAMPLES_PER_FILE);
+    const std::string base =
+      arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_BASE_DIR);
+    const int samples_per_file =
+      arg_parser.get<int>(LBANN_OPTION_SAMPLES_PER_FILE);
 
     // master creates output directory structure
     if (master) {
       std::stringstream s;
-      for (int j=0; j<num_dirs; j++) {
+      for (int j = 0; j < num_dirs; j++) {
         s << "mkdir -p " << base << "/" << j;
         std::cerr << "\nrunning system call: " << s.str() << "\n\n";
         int r = system(s.str().c_str());
         if (r != 0) {
-          throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: call to system failed: " + s.str());
+          throw lbann_exception(std::string{} + __FILE__ + " " +
+                                std::to_string(__LINE__) +
+                                " :: call to system failed: " + s.str());
         }
         s.clear();
         s.str("");
@@ -98,18 +107,19 @@ int main(int argc, char *argv[]) {
     int size;
     if (master) {
       std::stringstream s;
-      std::ifstream in(arg_parser.get<std::string>(LBANN_OPTION_FILELIST).c_str());
+      std::ifstream in(
+        arg_parser.get<std::string>(LBANN_OPTION_FILELIST).c_str());
       if (!in) {
-        throw lbann_exception(std::string{} + __FILE__ + " " +
-                              std::to_string(__LINE__) + " :: failed to open " +
-                              arg_parser.get<std::string>(LBANN_OPTION_FILELIST) +
-                              " for reading");
+        throw lbann_exception(
+          std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+          " :: failed to open " +
+          arg_parser.get<std::string>(LBANN_OPTION_FILELIST) + " for reading");
       }
       std::string line;
       while (getline(in, line)) {
         if (line.size()) {
           s << line << " ";
-          //files.push_back(line);
+          // files.push_back(line);
         }
       }
       in.close();
@@ -129,7 +139,8 @@ int main(int argc, char *argv[]) {
         files.push_back(filename);
       }
     }
-    if (rank == 1) std::cerr << "num files: " << files.size() << "\n";
+    if (rank == 1)
+      std::cerr << "num files: " << files.size() << "\n";
 
     // repackage
     hid_t hdf5_file_hnd;
@@ -143,83 +154,125 @@ int main(int argc, char *argv[]) {
     int cur_dir = 0;
     int cur_file = 0;
     char output_fn[1024];
-    sprintf(output_fn, "%s/%d/samples_%d_%d.bundle", base.c_str(), cur_dir++, cur_file++, rank);
+    sprintf(output_fn,
+            "%s/%d/samples_%d_%d.bundle",
+            base.c_str(),
+            cur_dir++,
+            cur_file++,
+            rank);
 
-    for (size_t j=rank; j<files.size(); j+= np) {
+    for (size_t j = rank; j < files.size(); j += np) {
       h += 1;
-      if (h % 10 == 0) std::cout << rank << " :: processed " << h << " files\n";
+      if (h % 10 == 0)
+        std::cout << rank << " :: processed " << h << " files\n";
 
       try {
 
-        hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( files[j].c_str() );
-      } catch (const std::exception&) {
-        std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n";
+        hdf5_file_hnd =
+          conduit::relay::io::hdf5_open_file_for_read(files[j].c_str());
+      }
+      catch (const std::exception&) {
+        std::cerr << rank
+                  << " :: exception hdf5_open_file_for_read: " << files[j]
+                  << "\n";
         continue;
       }
 
       std::vector<std::string> cnames;
       try {
-        conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-      } catch (const std::exception&) {
-        std::cerr << rank << " :: exception hdf5_group_list_child_names; " << files[j] << "\n";
+        conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd,
+                                                        "/",
+                                                        cnames);
+      }
+      catch (const std::exception&) {
+        std::cerr << rank << " :: exception hdf5_group_list_child_names; "
+                  << files[j] << "\n";
         continue;
       }
-      std::cerr << rank << " :: " << files[j] << " contains " << cnames.size() << " samples\n";
+      std::cerr << rank << " :: " << files[j] << " contains " << cnames.size()
+                << " samples\n";
 
-      for (size_t i=0; i<cnames.size(); i++) {
+      for (size_t i = 0; i < cnames.size(); i++) {
 
         key = "/" + cnames[i] + "/performance/success";
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
-        } catch (const std::exception&) {
-          std::cerr << rank << " :: exception reading success flag: " << files[j] << "\n";
+        }
+        catch (const std::exception&) {
+          std::cerr << rank
+                    << " :: exception reading success flag: " << files[j]
+                    << "\n";
           continue;
         }
 
         int success = n_ok.to_int64();
         if (success == 1) {
-            try {
-                key = "/" + cnames[i];
-                conduit::relay::io::hdf5_read(hdf5_file_hnd, key, node);
-                save_me["/" + cnames[i]] = node;
+          try {
+            key = "/" + cnames[i];
+            conduit::relay::io::hdf5_read(hdf5_file_hnd, key, node);
+            save_me["/" + cnames[i]] = node;
+          }
+          catch (const std::exception&) {
+            throw lbann_exception(
+              std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+              " :: rank " + std::to_string(rank) +
+              " :: " + "exception reading sample: " + cnames[i] + " which is " +
+              std::to_string(i) + " of " + std::to_string(cnames[i].size()) +
+              "; " + files[j]);
+          }
 
-            } catch (const std::exception&) {
-              throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: rank " + std::to_string(rank) + " :: " + "exception reading sample: " + cnames[i] + " which is " + std::to_string(i) + " of " + std::to_string(cnames[i].size()) + "; " + files[j]);
+          ++sample_count;
+          if (sample_count == samples_per_file) {
+            try {
+              conduit::relay::io::save(save_me, output_fn, "hdf5");
+            }
+            catch (const std::exception& e) {
+              std::cerr
+                << rank
+                << " :: exception: failed to save conduit node to disk; what: "
+                << e.what() << "\n";
+              continue;
+            }
+            catch (...) {
+              std::cerr
+                << rank
+                << " :: exception: failed to save conduit node to disk\n";
+              continue;
             }
 
-            ++sample_count;
-            if (sample_count == samples_per_file) {
-              try {
-                conduit::relay::io::save(save_me, output_fn, "hdf5");
-              } catch (const std::exception& e) {
-                std::cerr << rank << " :: exception: failed to save conduit node to disk; what: " << e.what() << "\n";
-                continue;
-              } catch (...) {
-                std::cerr << rank << " :: exception: failed to save conduit node to disk\n";
-                continue;
-              }
-
-              save_me.reset();
-              sprintf(output_fn, "%s/%d/samples_%d_%d.bundle", base.c_str(), cur_dir++, cur_file++, rank);
-              sample_count = 0;
-              if (cur_dir == num_dirs) {
-                cur_dir = 0;
-              }
+            save_me.reset();
+            sprintf(output_fn,
+                    "%s/%d/samples_%d_%d.bundle",
+                    base.c_str(),
+                    cur_dir++,
+                    cur_file++,
+                    rank);
+            sample_count = 0;
+            if (cur_dir == num_dirs) {
+              cur_dir = 0;
             }
           }
         }
       }
-      if (sample_count) {
-        try {
-          conduit::relay::io::save(save_me, output_fn, "hdf5");
-        } catch (exception const& e) {
-          std::cerr << rank << " :: exception: failed to save conduit node to disk; what: " << e.what() << "\n";
-        } catch (...) {
-          std::cerr << rank << " :: exception: failed to save conduit node to disk; FINAL FILE\n";
-        }
+    }
+    if (sample_count) {
+      try {
+        conduit::relay::io::save(save_me, output_fn, "hdf5");
       }
-
-  } catch (std::exception const& e) {
+      catch (exception const& e) {
+        std::cerr
+          << rank
+          << " :: exception: failed to save conduit node to disk; what: "
+          << e.what() << "\n";
+      }
+      catch (...) {
+        std::cerr
+          << rank
+          << " :: exception: failed to save conduit node to disk; FINAL FILE\n";
+      }
+    }
+  }
+  catch (std::exception const& e) {
     El::ReportException(e);
     return EXIT_FAILURE;
   }

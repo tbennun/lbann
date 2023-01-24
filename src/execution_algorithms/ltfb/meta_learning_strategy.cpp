@@ -76,7 +76,6 @@ lbann::make_abstract<lbann::ltfb::MetaLearningStrategy>(
   google::protobuf::Message const& params)
 {
   return get_factory().create_object(
-    protobuf::message_type(
-      dynamic_cast<google::protobuf::Any const&>(params)),
+    protobuf::message_type(dynamic_cast<google::protobuf::Any const&>(params)),
     params);
 }

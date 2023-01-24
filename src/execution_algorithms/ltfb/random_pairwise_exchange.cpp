@@ -63,7 +63,8 @@ namespace {
       Output(std::cout, __VA_ARGS__);                                          \
   } while (0)
 
-template <typename... Args> void Output(std::ostream& os, Args&&... args)
+template <typename... Args>
+void Output(std::ostream& os, Args&&... args)
 {
   (os << ... << args) << "\n";
 }
@@ -74,7 +75,7 @@ std::string stringify(std::unordered_map<std::string, PrintableT> const& m_in)
   std::map<std::string, PrintableT> m(std::cbegin(m_in), std::cend(m_in));
   std::ostringstream oss;
   oss << "{";
-  for (auto const& [key,val] : m)
+  for (auto const& [key, val] : m)
     oss << " \"" << key << "\": " << val << ",";
   oss << " }";
   return oss.str();
@@ -336,7 +337,7 @@ void RandomPairwiseExchange::select_next(model& m,
     m.setup(trainer.get_max_mini_batch_size(),
             metadata,
             trainer.get_grids(),
-            /*force*/true);
+            /*force*/ true);
   }
 
   LBANN_LOG_TRAINER_MASTER(comm,
@@ -452,8 +453,7 @@ lbann::make_abstract<lbann::ltfb::RandomPairwiseExchange::ExchangeStrategy>(
   for (int id = 0; id < num_weights; ++id)
     weights_names.emplace(params.weights_name(id));
 
-  auto const& exchange_params =
-    protobuf::get_oneof_message(params, "strategy");
+  auto const& exchange_params = protobuf::get_oneof_message(params, "strategy");
   return get_exchange_factory().create_object(
     protobuf::message_type(exchange_params),
     std::move(weights_names),

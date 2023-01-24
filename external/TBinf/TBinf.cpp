@@ -26,20 +26,21 @@
 // TBinf.cpp - Tensorboard interface implementation
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <string.h>
+#include "TBinf.hpp"
+#include "tbext.hpp"
 #include <algorithm>
 #include <chrono>
 #include <limits>
-#include "TBinf.hpp"
-#include "tbext.hpp"
+#include <string.h>
 
 namespace TBinf {
 
-SummaryWriter::SummaryWriter(const std::string logdir) {
+SummaryWriter::SummaryWriter(const std::string logdir)
+{
   GOOGLE_PROTOBUF_VERIFY_VERSION;
   filename = logdir + "/events.tfevents.";
   double secs = get_time_in_seconds();
-  filename += std::to_string((int64_t) secs);
+  filename += std::to_string((int64_t)secs);
   // Note: Tensorflow also appends the hostname here, but that doesn't currently
   // seem necessary.
   // TODO: We might check whether the file exists.
@@ -53,16 +54,17 @@ SummaryWriter::SummaryWriter(const std::string logdir) {
   init_histogram_buckets();
 }
 
-SummaryWriter::~SummaryWriter() {
+SummaryWriter::~SummaryWriter()
+{
   flush();
   file.close();
 }
 
-void SummaryWriter::add_scalar(const std::string tag, float value,
-                               int64_t step) {
+void SummaryWriter::add_scalar(const std::string tag, float value, int64_t step)
+{
   // Allocation is freed after the event takes ownership.
-  tensorflow::Summary *s = new tensorflow::Summary();
-  tensorflow::Summary::Value *v = s->add_value();
+  tensorflow::Summary* s = new tensorflow::Summary();
+  tensorflow::Summary::Value* v = s->add_value();
   v->set_tag(tag);
   v->set_simple_value(value);
   write_summary_event(s, step);
@@ -71,12 +73,13 @@ void SummaryWriter::add_scalar(const std::string tag, float value,
 void SummaryWriter::add_image(const std::string& tag,
                               std::string encoded_img,
                               const std::vector<size_t>& dims,
-                              int64_t step){
+                              int64_t step)
+{
 
   auto s = std::unique_ptr<tensorflow::Summary>(new tensorflow::Summary());
-  tensorflow::Summary::Value *v = s->add_value();
+  tensorflow::Summary::Value* v = s->add_value();
   v->set_tag(tag);
-  tensorflow::Summary_Image *img = v->mutable_image();
+  tensorflow::Summary_Image* img = v->mutable_image();
   img->Clear();
   img->set_colorspace(dims[0]);
   img->set_height(dims[1]);
@@ -87,11 +90,11 @@ void SummaryWriter::add_image(const std::string& tag,
   write_summary_event(s.release(), step);
 }
 
-
 void SummaryWriter::add_histogram(const std::string tag,
                                   std::vector<float>::const_iterator first,
                                   std::vector<float>::const_iterator last,
-                                  int64_t step) {
+                                  int64_t step)
+{
   double min = std::numeric_limits<double>::infinity();
   double max = -std::numeric_limits<double>::infinity();
   double num = 0.0;
@@ -103,7 +106,8 @@ void SummaryWriter::add_histogram(const std::string tag,
     const auto& val = *i;
     int bucket = std::upper_bound(histogram_buckets.begin(),
                                   histogram_buckets.end(),
-                                  val) - histogram_buckets.begin();
+                                  val) -
+                 histogram_buckets.begin();
     buckets[bucket] += 1.0;
     if (val < min) {
       min = val;
@@ -116,10 +120,10 @@ void SummaryWriter::add_histogram(const std::string tag,
     sqsum += val * val;
   }
   // Set up the summary object.
-  tensorflow::Summary *s = new tensorflow::Summary();
-  tensorflow::Summary::Value *v = s->add_value();
+  tensorflow::Summary* s = new tensorflow::Summary();
+  tensorflow::Summary::Value* v = s->add_value();
   v->set_tag(tag);
-  tensorflow::HistogramProto *histo = v->mutable_histo();
+  tensorflow::HistogramProto* histo = v->mutable_histo();
   histo->Clear();
   histo->set_min(min);
   histo->set_max(max);
@@ -147,14 +151,18 @@ void SummaryWriter::add_histogram(const std::string tag,
 
 void SummaryWriter::add_histogram(const std::string tag,
                                   const std::vector<float> buckets,
-                                  double min, double max, double num,
-                                  double sum, double sqsum,
-                                  int64_t step) {
+                                  double min,
+                                  double max,
+                                  double num,
+                                  double sum,
+                                  double sqsum,
+                                  int64_t step)
+{
   // Set up the summary object.
-  tensorflow::Summary *s = new tensorflow::Summary();
-  tensorflow::Summary::Value *v = s->add_value();
+  tensorflow::Summary* s = new tensorflow::Summary();
+  tensorflow::Summary::Value* v = s->add_value();
   v->set_tag(tag);
-  tensorflow::HistogramProto *histo = v->mutable_histo();
+  tensorflow::HistogramProto* histo = v->mutable_histo();
   histo->Clear();
   histo->set_min(min);
   histo->set_max(max);
@@ -180,11 +188,13 @@ void SummaryWriter::add_histogram(const std::string tag,
   write_summary_event(s, step);
 }
 
-const std::vector<double>& SummaryWriter::get_histogram_buckets() const {
+const std::vector<double>& SummaryWriter::get_histogram_buckets() const
+{
   return histogram_buckets;
 }
 
-std::vector<double> SummaryWriter::get_default_histogram_buckets() {
+std::vector<double> SummaryWriter::get_default_histogram_buckets()
+{
   // Set up the buckets.
   std::vector<double> buckets;
   std::vector<double> pos_buckets;
@@ -196,19 +206,16 @@ std::vector<double> SummaryWriter::get_default_histogram_buckets() {
   pos_buckets.push_back(std::numeric_limits<double>::max());
   neg_buckets.push_back(-std::numeric_limits<double>::max());
   std::reverse(neg_buckets.begin(), neg_buckets.end());
-  buckets.insert(buckets.end(), neg_buckets.begin(),
-                 neg_buckets.end());
+  buckets.insert(buckets.end(), neg_buckets.begin(), neg_buckets.end());
   buckets.push_back(0.0);
-  buckets.insert(buckets.end(), pos_buckets.begin(),
-                 pos_buckets.end());
+  buckets.insert(buckets.end(), pos_buckets.begin(), pos_buckets.end());
   return buckets;
 }
 
-void SummaryWriter::flush() {
-  file.flush();
-}
+void SummaryWriter::flush() { file.flush(); }
 
-void SummaryWriter::write_summary_event(tensorflow::Summary *s, int64_t step) {
+void SummaryWriter::write_summary_event(tensorflow::Summary* s, int64_t step)
+{
   tensorflow::Event e;
   e.set_wall_time(get_time_in_seconds());
   if (step >= 0) {
@@ -218,7 +225,8 @@ void SummaryWriter::write_summary_event(tensorflow::Summary *s, int64_t step) {
   write_event(e);
 }
 
-void SummaryWriter::write_event(tensorflow::Event& e) {
+void SummaryWriter::write_event(tensorflow::Event& e)
+{
   // Record format (from Tensorflow record_writer.cc):
   // uint64 length
   // uint32 masked crc of length
@@ -236,14 +244,16 @@ void SummaryWriter::write_event(tensorflow::Event& e) {
   file << std::string(footer, sizeof(footer));
 }
 
-double SummaryWriter::get_time_in_seconds() {
+double SummaryWriter::get_time_in_seconds()
+{
   using namespace std::chrono;
   auto now = system_clock::now().time_since_epoch();
   return duration_cast<duration<double>>(now).count();
 }
 
-void SummaryWriter::init_histogram_buckets() {
+void SummaryWriter::init_histogram_buckets()
+{
   histogram_buckets = get_default_histogram_buckets();
 }
 
-}  // namespace TBinf
+} // namespace TBinf

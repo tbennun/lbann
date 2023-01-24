@@ -27,15 +27,15 @@
 #define LBANN_SPLIT_LAYER_INSTANTIATE
 #include "lbann/layers/transform/split.hpp"
 
-#include <lbann/proto/proto_common.hpp>
 #include <lbann.pb.h>
+#include <lbann/proto/proto_common.hpp>
 
 namespace lbann {
 
 LBANN_LAYER_DEFAULT_BUILDER(split)
 
-#define PROTO(T)                                                        \
-  template class split_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+#define PROTO(T)                                                               \
+  template class split_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>;  \
   template class split_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>; \
   LBANN_LAYER_BUILDER_ETI(split, T, El::Device::CPU)
 
@@ -45,17 +45,20 @@ LBANN_LAYER_DEFAULT_BUILDER(split)
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
-void split_distconv_adapter<TensorDataType, Layout, Dev>::bp_compute() {
+void split_distconv_adapter<TensorDataType, Layout, Dev>::bp_compute()
+{
   LBANN_ERROR(this->get_name(), ": Distconv not supported");
 }
 
-#define PROTO(T)                                                        \
-  template class split_distconv_adapter<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class split_distconv_adapter<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class split_distconv_adapter<T,                                     \
+                                        data_layout::DATA_PARALLEL,            \
+                                        El::Device::CPU>;                      \
+  template class split_distconv_adapter<T,                                     \
+                                        data_layout::MODEL_PARALLEL,           \
+                                        El::Device::CPU>
 
 #include "lbann/macros/instantiate.hpp"
 #endif // LBANN_HAS_DISTCONV
 
-
-
-}// namespace lbann
+} // namespace lbann

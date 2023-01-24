@@ -38,11 +38,12 @@ namespace lbann {
  *  rotation angle.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class rotation_layer : public data_type_layer<TensorDataType> {
+class rotation_layer : public data_type_layer<TensorDataType>
+{
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "rotation_layer only supports DATA_PARALLEL");
-  static_assert(Device == El::Device::CPU,
-                "rotation_layer only supports CPU");
+  static_assert(Device == El::Device::CPU, "rotation_layer only supports CPU");
+
 public:
   /** @name Public Types */
   ///@{
@@ -52,17 +53,13 @@ public:
 
   ///@}
 
-
 public:
-
-  rotation_layer(lbann_comm *comm)
-    : data_type_layer<TensorDataType>(comm) {
-		 this->m_expected_num_parent_layers = 2;
+  rotation_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm)
+  {
+    this->m_expected_num_parent_layers = 2;
   }
 
-  rotation_layer* copy() const override {
-    return new rotation_layer(*this);
-  }
+  rotation_layer* copy() const override { return new rotation_layer(*this); }
 
   /** @name Serialization */
   ///@{
@@ -79,13 +76,11 @@ public:
   void fp_compute() override;
 
 protected:
-
   friend class cereal::access;
-  rotation_layer()
-    : rotation_layer(nullptr)
-  {}
+  rotation_layer() : rotation_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
     // Get input dimensions
@@ -98,26 +93,35 @@ protected:
       for (size_t i = 0; i < dims.size(); ++i) {
         ss << (i > 0 ? " x " : "") << dims[i];
       }
-      LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
-        "expects a 3D input in CHW format, ",
-        "but input dimensions are ",ss.str());
+      LBANN_ERROR(this->get_type(),
+                  " layer \"",
+                  this->get_name(),
+                  "\" ",
+                  "expects a 3D input in CHW format, ",
+                  "but input dimensions are ",
+                  ss.str());
     }
     if (angle_dims.size() > 1 || angle_dims[0] != 1) {
       std::ostringstream ss;
       for (size_t i = 0; i < angle_dims.size(); ++i) {
         ss << (i > 0 ? " x " : "") << angle_dims[i];
       }
-      LBANN_ERROR(
-        this->get_type()," layer \"",this->get_name(),"\" ",
-        "expects a scalar input for the angle, ",
-        "but input dimensions are ",ss.str());
+      LBANN_ERROR(this->get_type(),
+                  " layer \"",
+                  this->get_name(),
+                  "\" ",
+                  "expects a scalar input for the angle, ",
+                  "but input dimensions are ",
+                  ss.str());
     }
   }
 };
 
 #ifndef LBANN_ROTATION_LAYER_INSTANTIATE
-#define PROTO(T) \
-  extern template class rotation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  extern template class rotation_layer<T,                                      \
+                                       data_layout::DATA_PARALLEL,             \
+                                       El::Device::CPU>
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO

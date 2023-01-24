@@ -36,17 +36,19 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class channelwise_mean_layer : public data_type_layer<TensorDataType> {
+class channelwise_mean_layer : public data_type_layer<TensorDataType>
+{
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "channelwise_mean_layer only supports "
                 "data-parallel data layout");
+
 public:
-
   channelwise_mean_layer(lbann_comm* = nullptr)
-    : data_type_layer<TensorDataType>(nullptr) {
-  }
+    : data_type_layer<TensorDataType>(nullptr)
+  {}
 
-  channelwise_mean_layer* copy() const override {
+  channelwise_mean_layer* copy() const override
+  {
     return new channelwise_mean_layer(*this);
   }
 
@@ -63,8 +65,8 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
 protected:
-
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     const auto& input_dims = this->get_input_dims();
     this->set_output_dims({input_dims[0]});
@@ -74,10 +76,11 @@ protected:
   void bp_compute() override;
 };
 
-
 #ifndef LBANN_CHANNELWISE_MEAN_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class channelwise_mean_layer<T, data_layout::DATA_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class channelwise_mean_layer<T,                              \
+                                               data_layout::DATA_PARALLEL,     \
+                                               Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

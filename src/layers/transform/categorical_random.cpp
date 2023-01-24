@@ -36,7 +36,11 @@ struct Builder
   static std::unique_ptr<Layer> Build(lbann_comm*)
   {
     LBANN_ERROR("Attempted to instantiate layer \"categorical_random\" with "
-                "Layout=", to_string(L), " and Device=", to_string(D) ,"\n",
+                "Layout=",
+                to_string(L),
+                " and Device=",
+                to_string(D),
+                "\n",
                 "This layer is only supported with DATA_PARALLEL data layout"
                 "on CPU.");
   }
@@ -47,9 +51,8 @@ struct Builder<T, data_layout::DATA_PARALLEL, El::Device::CPU>
 {
   static std::unique_ptr<Layer> Build(lbann_comm* comm)
   {
-    using LayerType = categorical_random_layer<T,
-                                               data_layout::DATA_PARALLEL,
-                                               El::Device::CPU>;
+    using LayerType =
+      categorical_random_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>;
     return std::make_unique<LayerType>(comm);
   }
 };
@@ -66,28 +69,30 @@ struct Builder<El::gpu_half_type, data_layout::DATA_PARALLEL, El::Device::CPU>
   }
 };
 #endif // LBANN_HAS_GPU_FP16
-}
+} // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_categorical_random_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const&)
+std::unique_ptr<Layer>
+build_categorical_random_layer_from_pbuf(lbann_comm* comm,
+                                         lbann_data::Layer const&)
 {
   using BuilderType = Builder<TensorDataType, Layout, Device>;
   return BuilderType::Build(comm);
 }
 
-#define PROTO(T)                                                        \
-  template class                                                        \
-  categorical_random_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  template class categorical_random_layer<T,                                   \
+                                          data_layout::DATA_PARALLEL,          \
+                                          El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 
-#define PROTO_DEVICE(T, Device) \
+#define PROTO_DEVICE(T, Device)                                                \
   LBANN_LAYER_BUILDER_ETI(categorical_random, T, Device)
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

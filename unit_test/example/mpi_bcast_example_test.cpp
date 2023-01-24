@@ -47,9 +47,7 @@ TEST_CASE("Example: test of Broadcast", "[mpi][example]")
   {
     std::vector<float> true_values = {1.f, 2.f, 3.f, 4.f};
     std::vector<float> values =
-      (rank_in_world == 0
-       ? true_values
-       : std::vector<float>(4, -1.f));
+      (rank_in_world == 0 ? true_values : std::vector<float>(4, -1.f));
 
     world_comm.world_broadcast(0, values.data(), values.size());
 

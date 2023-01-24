@@ -28,9 +28,9 @@
 
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/execution_algorithms/factory.hpp"
-#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/execution_algorithms/kfac/execution_context.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
+#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/make_abstract.hpp"
@@ -68,24 +68,25 @@ public:
   ///@{
   /** @brief Construct KFAC from its component pieces.
    */
-  KFAC(
-    std::string name,
-    std::unique_ptr<TermCriteriaType> stop,
-    std::vector<double> damping_act_params,
-    std::vector<double> damping_err_params,
-    std::vector<double> damping_bn_act_params,
-    std::vector<double> damping_bn_err_params,
-    size_t damping_warmup_steps,
-    double kronecker_decay,
-    bool print_time,  bool print_matrix, bool print_matrix_summary,
-    bool use_pi,
-    std::vector<size_t> update_intervals,
-    size_t update_interval_steps,
-    kfac::kfac_inverse_strategy inverse_strategy,
-    std::vector<std::string> disable_layers,
-    double learning_rate_factor,
-    double learning_rate_factor_gru,
-    size_t compute_interval);
+  KFAC(std::string name,
+       std::unique_ptr<TermCriteriaType> stop,
+       std::vector<double> damping_act_params,
+       std::vector<double> damping_err_params,
+       std::vector<double> damping_bn_act_params,
+       std::vector<double> damping_bn_err_params,
+       size_t damping_warmup_steps,
+       double kronecker_decay,
+       bool print_time,
+       bool print_matrix,
+       bool print_matrix_summary,
+       bool use_pi,
+       std::vector<size_t> update_intervals,
+       size_t update_interval_steps,
+       kfac::kfac_inverse_strategy inverse_strategy,
+       std::vector<std::string> disable_layers,
+       double learning_rate_factor,
+       double learning_rate_factor_gru,
+       size_t compute_interval);
 
   ~KFAC() noexcept = default;
   KFAC(KFAC const& other) = delete;
@@ -135,12 +136,8 @@ public:
   constexpr static const int prof_color = 0;
 
 protected:
-
   /** @brief Train model on one step / mini-batch of an SGD forward pass */
-  bool train_mini_batch(
-    ExeContextType& c,
-    model& model,
-    data_coordinator& dc);
+  bool train_mini_batch(ExeContextType& c, model& model, data_coordinator& dc);
 
   /** @name Callback hooks */
   ///@{
@@ -163,39 +160,26 @@ protected:
    */
   kfac::KFACExecutionContext* do_get_new_execution_context() const final;
 
-  void send_recv_inverse_matrices(
-    ExeContextType& context,
-    lbann_comm *comm);
+  void send_recv_inverse_matrices(ExeContextType& context, lbann_comm* comm);
 
 private:
-
 #if 1
   /** @todo Break up into more manageable pieces */
-  void on_forward_prop_end(
-    ExeContextType& context,
-    model& model);
-  void on_backward_prop_end(
-    ExeContextType& context,
-    model& model);
+  void on_forward_prop_end(ExeContextType& context, model& model);
+  void on_backward_prop_end(ExeContextType& context, model& model);
 
 #else
   /** @brief Compute Kronecker factors */
-  void compute_kronecker_factors(
-    ExeContextType& context,
-    model& model);
+  void compute_kronecker_factors(ExeContextType& context, model& model);
 
   /** @brief Compute Cholesky factorization of Kronecker factors */
-  void invert_kronecker_factors(
-    ExeContextType& context,
-    model& model);
+  void invert_kronecker_factors(ExeContextType& context, model& model);
 
   /** @brief Precondition gradients with Kronecker factors */
-  void precondition_gradients(
-    ExeContextType& context,
-    model& model);
+  void precondition_gradients(ExeContextType& context, model& model);
 #endif // 0
 
-  void sync_weights_model(model& model, lbann_comm *comm);
+  void sync_weights_model(model& model, lbann_comm* comm);
 
   /** @brief The KFAC stopping criteria. */
   std::unique_ptr<TermCriteriaType> m_stopping_criteria;
@@ -219,8 +203,8 @@ private:
       constant. */
   bool m_use_pi;
 
-  /** @brief Space-separated pairs of the initial and the target update intervals.
-   *If only one value is specified, it will be used throughout
+  /** @brief Space-separated pairs of the initial and the target update
+   *intervals. If only one value is specified, it will be used throughout
    *training.
    */
   std::vector<size_t> m_update_intervals;
@@ -238,7 +222,7 @@ private:
   double m_learning_rate_factor, m_learning_rate_factor_gru;
 
   /** @brief Whether inverse of Kronecker factors are available. */
-  bool m_has_kronecker_inverse=false;
+  bool m_has_kronecker_inverse = false;
   size_t m_compute_interval;
 
   El::Matrix<double, El::Device::CPU> m_inverse_matrices_size;

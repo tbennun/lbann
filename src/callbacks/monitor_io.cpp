@@ -39,43 +39,50 @@ namespace lbann {
 namespace callback {
 
 template <class Archive>
-void monitor_io::serialize(Archive & ar) {
-  ar(::cereal::make_nvp(
-       "BaseCallback",
-       ::cereal::base_class<callback_base>(this)),
+void monitor_io::serialize(Archive& ar)
+{
+  ar(::cereal::make_nvp("BaseCallback",
+                        ::cereal::base_class<callback_base>(this)),
      CEREAL_NVP(m_layers));
 }
 
-void monitor_io::on_epoch_end(model *m) {
-  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
+void monitor_io::on_epoch_end(model* m)
+{
+  const auto& c =
+    static_cast<const SGDExecutionContext&>(m->get_execution_context());
   const data_coordinator& dc = get_const_trainer().get_data_coordinator();
-  lbann_comm *comm = m->get_comm();
+  lbann_comm* comm = m->get_comm();
   std::cout << "Rank " << comm->get_trainer_rank() << "."
             << comm->get_rank_in_trainer() << " processed "
-            << dc.get_num_samples(execution_mode::training) << " training samples of "
+            << dc.get_num_samples(execution_mode::training)
+            << " training samples of "
             << dc.get_total_num_samples(execution_mode::training) << " ("
-            << dc.get_num_samples(execution_mode::training) / c.get_epoch() << " per epoch)" << std::endl;
+            << dc.get_num_samples(execution_mode::training) / c.get_epoch()
+            << " per epoch)" << std::endl;
 }
 
-void monitor_io::on_test_end(model *m) {
-  const auto& c = static_cast<const SGDExecutionContext&>(m->get_execution_context());
+void monitor_io::on_test_end(model* m)
+{
+  const auto& c =
+    static_cast<const SGDExecutionContext&>(m->get_execution_context());
   const data_coordinator& dc = get_const_trainer().get_data_coordinator();
-  lbann_comm *comm = m->get_comm();
+  lbann_comm* comm = m->get_comm();
   std::cout << "Rank " << comm->get_trainer_rank() << "."
             << comm->get_rank_in_trainer() << " processed "
-            << dc.get_num_samples(execution_mode::testing) << " test samples of "
+            << dc.get_num_samples(execution_mode::testing)
+            << " test samples of "
             << dc.get_total_num_samples(execution_mode::testing) << " ("
             << dc.get_num_samples(execution_mode::testing) / c.get_epoch()
             << " per epoch)" << std::endl;
 }
 
 std::unique_ptr<callback_base>
-build_monitor_io_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+build_monitor_io_callback_from_pbuf(const google::protobuf::Message& proto_msg,
+                                    const std::shared_ptr<lbann_summary>&)
+{
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDispIOStats&>(proto_msg);
-  return std::make_unique<monitor_io>(
-    parse_list<std::string>(params.layers()));
+  return std::make_unique<monitor_io>(parse_list<std::string>(params.layers()));
 }
 
 } // namespace callback

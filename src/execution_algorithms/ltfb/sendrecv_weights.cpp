@@ -65,8 +65,8 @@ SendRecvWeights::SendRecvWeights(std::set<std::string> const& weights_names,
 
 SendRecvWeights::SendRecvWeights(std::set<std::string>&& weights_names,
                                  bool exchange_hyperparameters)
-  : BaseType(std::move(weights_names)), exchange_hyperparams_{
-                                          exchange_hyperparameters}
+  : BaseType(std::move(weights_names)),
+    exchange_hyperparams_{exchange_hyperparameters}
 {}
 
 std::unique_ptr<model>

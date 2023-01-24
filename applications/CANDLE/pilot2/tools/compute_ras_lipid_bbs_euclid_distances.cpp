@@ -25,27 +25,28 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "common.hpp"
 #include "lbann/comm.hpp"
-#include "lbann/utils/options.hpp"
+#include "lbann/utils/commify.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/jag_utils.hpp"
-#include "lbann/utils/commify.hpp"
-#include <cnpy.h>
-#include <cmath>
+#include "lbann/utils/options.hpp"
 #include <cfloat>
-#include "common.hpp"
+#include <cmath>
+#include <cnpy.h>
 
 using namespace lbann;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
 
   try {
-    options *opts = options::get();
+    options* opts = options::get();
     opts->init(argc, argv);
 
-    if (! opts->has_string("filelist")) {
+    if (!opts->has_string("filelist")) {
       LBANN_ERROR("usage: ", argv[0], " --filelist=<string>");
     }
     std::string input_fn = opts->get_string("filelist");
@@ -59,14 +60,14 @@ int main(int argc, char *argv[]) {
 
     size_t nn = 0; // only used for user feedback
     std::vector<xyz> beads(Num_beads);
-    for (size_t j=rank; j<filenames.size(); j+=np) {
+    for (size_t j = rank; j < filenames.size(); j += np) {
       if (!rank && j == 0) {
         std::cerr << "Opening for processing: " << filenames[j] << std::endl;
       }
 
       // Get num samples, and run sanity checks
       std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(filenames[j]);
-      bool is_good =  sanity_check_npz_file(a, filenames[j]);
+      bool is_good = sanity_check_npz_file(a, filenames[j]);
 
       // Open output file
       std::string fn = filenames[j] + ".bbs_stats";
@@ -88,13 +89,13 @@ int main(int argc, char *argv[]) {
         out.write((char*)&nbeads, sizeof(float));
 
         // Get the bbs data array
-        const float *bd = a["bbs"].data<float>();
+        const float* bd = a["bbs"].data<float>();
 
         // Loop over the samples (frames)
-        for (int k=0; k<num_frames; k++) {
+        for (int k = 0; k < num_frames; k++) {
           // Cache all RAS BB bead coordinates for the current sample
           beads.clear();
-          for (size_t i=0; i<Num_beads; i++) {
+          for (size_t i = 0; i < Num_beads; i++) {
             beads.push_back(xyz(bd[0], bd[1], bd[2]));
             bd += 3;
           }
@@ -102,14 +103,14 @@ int main(int argc, char *argv[]) {
           // Write output for the current sample
           //
           // z-coordinates
-          for (size_t g=0; g<Num_beads; g++) {
+          for (size_t g = 0; g < Num_beads; g++) {
             out.write((char*)&beads[g].z, sizeof(float));
           }
 
           // euclidean distance between each pair of beads i, h,
           // where h >= i
-          for (int i=0; i<Num_beads-1; i++) {
-            for (int h=i+1; h<Num_beads; h++) {
+          for (int i = 0; i < Num_beads - 1; i++) {
+            for (int h = i + 1; h < Num_beads; h++) {
               float d = beads[i].dist(beads[h]);
               out.write((char*)&d, sizeof(float));
             }
@@ -119,8 +120,8 @@ int main(int argc, char *argv[]) {
         // User feedback
         ++nn;
         if (!rank) {
-          std::cerr << "approx " << (nn*np) << " files of "
-          << filenames.size() << " processed\n";
+          std::cerr << "approx " << (nn * np) << " files of "
+                    << filenames.size() << " processed\n";
         }
 
       } // if (is_good)
@@ -128,11 +129,13 @@ int main(int argc, char *argv[]) {
       // Close output file
       out.close();
     }
-
-  } catch (std::exception const &e) {
-    if (master) std::cerr << "caught exception: " << e.what() << "\n";
+  }
+  catch (std::exception const& e) {
+    if (master)
+      std::cerr << "caught exception: " << e.what() << "\n";
     return EXIT_FAILURE;
-  } catch (...) {
+  }
+  catch (...) {
     std::cerr << "unknown exception in main\n";
     return EXIT_FAILURE;
   }

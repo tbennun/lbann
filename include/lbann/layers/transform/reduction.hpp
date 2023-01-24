@@ -31,7 +31,12 @@
 
 namespace lbann {
 
-enum class reduction_mode {INVALID, SUM, AVERAGE};
+enum class reduction_mode
+{
+  INVALID,
+  SUM,
+  AVERAGE
+};
 
 /** @brief Reduce tensor to scalar
  *
@@ -40,17 +45,16 @@ enum class reduction_mode {INVALID, SUM, AVERAGE};
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class reduction_layer : public data_type_layer<TensorDataType> {
+class reduction_layer : public data_type_layer<TensorDataType>
+{
 private:
-
   /** Reduction mode. */
   reduction_mode m_mode;
 
 public:
-
-  reduction_layer(reduction_mode mode=reduction_mode::SUM)
-    : data_type_layer<TensorDataType>(nullptr),
-      m_mode(mode) {
+  reduction_layer(reduction_mode mode = reduction_mode::SUM)
+    : data_type_layer<TensorDataType>(nullptr), m_mode(mode)
+  {
     if (mode == reduction_mode::INVALID) {
       LBANN_ERROR("invalid reduction mode");
     }
@@ -70,12 +74,17 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  description get_description() const override {
+  description get_description() const override
+  {
     auto desc = data_type_layer<TensorDataType>::get_description();
     std::string mode_str;
     switch (m_mode) {
-    case reduction_mode::SUM:     mode_str = "sum";     break;
-    case reduction_mode::AVERAGE: mode_str = "average"; break;
+    case reduction_mode::SUM:
+      mode_str = "sum";
+      break;
+    case reduction_mode::AVERAGE:
+      mode_str = "average";
+      break;
     case reduction_mode::INVALID:
     default:
       mode_str = "invalid";
@@ -85,13 +94,14 @@ public:
   }
 
 protected:
-
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims({1});
   }
 
-  void fp_compute() override {
+  void fp_compute() override
+  {
 
     // Constants
     const auto one = El::TypeTraits<TensorDataType>::One();
@@ -118,22 +128,20 @@ protected:
     // Compute local reductions
     switch (m_mode) {
     case reduction_mode::SUM:
-      El::Gemv(
-        El::TRANSPOSE,
-        one,
-        input.LockedMatrix(),
-        ones,
-        zero,
-        local_reduction);
+      El::Gemv(El::TRANSPOSE,
+               one,
+               input.LockedMatrix(),
+               ones,
+               zero,
+               local_reduction);
       break;
     case reduction_mode::AVERAGE:
-      El::Gemv(
-        El::TRANSPOSE,
-        one / El::To<TensorDataType>(input.Height()),
-        input.LockedMatrix(),
-        ones,
-        zero,
-        local_reduction);
+      El::Gemv(El::TRANSPOSE,
+               one / El::To<TensorDataType>(input.Height()),
+               input.LockedMatrix(),
+               ones,
+               zero,
+               local_reduction);
       break;
     default:
       LBANN_ERROR("invalid reduction mode");
@@ -142,10 +150,10 @@ protected:
     // Accumulate local reductions in output matrix
     /// @todo Replace with Reduce when supported in Hydrogen.
     El::AllReduce(local_reduction, col_comm, El::mpi::SUM);
-
   }
 
-  void bp_compute() override {
+  void bp_compute() override
+  {
 
     // Constants
     const auto one = El::TypeTraits<TensorDataType>::One();
@@ -178,40 +186,35 @@ protected:
     // Populate error signals
     switch (m_mode) {
     case reduction_mode::SUM:
-      El::Gemm(
-        El::NORMAL,
-        El::NORMAL,
-        one,
-        ones,
-        local_output_grad,
-        zero,
-        input_grad.Matrix());
+      El::Gemm(El::NORMAL,
+               El::NORMAL,
+               one,
+               ones,
+               local_output_grad,
+               zero,
+               input_grad.Matrix());
       break;
     case reduction_mode::AVERAGE:
-      El::Gemm(
-        El::NORMAL,
-        El::NORMAL,
-        one / El::To<TensorDataType>(input_grad.Height()),
-        ones,
-        local_output_grad,
-        zero,
-        input_grad.Matrix());
+      El::Gemm(El::NORMAL,
+               El::NORMAL,
+               one / El::To<TensorDataType>(input_grad.Height()),
+               ones,
+               local_output_grad,
+               zero,
+               input_grad.Matrix());
       break;
     default:
       LBANN_ERROR("invalid reduction mode");
     }
-
   }
-
 };
 
-
 #ifndef LBANN_REDUCTION_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device)                 \
-  extern template class reduction_layer<        \
-    T, data_layout::DATA_PARALLEL, Device>;     \
-  extern template class reduction_layer<        \
-    T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class reduction_layer<T,                                     \
+                                        data_layout::DATA_PARALLEL,            \
+                                        Device>;                               \
+  extern template class reduction_layer<T, data_layout::MODEL_PARALLEL, Device>
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #endif // LBANN_REDUCTION_LAYER_INSTANTIATE

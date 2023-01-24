@@ -35,15 +35,18 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class identity_zero_layer : public data_type_layer<TensorDataType> {
+class identity_zero_layer : public data_type_layer<TensorDataType>
+{
 public:
-
-  identity_zero_layer(lbann_comm *comm)
-    : data_type_layer<TensorDataType>(comm) {
+  identity_zero_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm)
+  {
     this->m_expected_num_parent_layers = 1;
   }
 
-  identity_zero_layer* copy() const override { return new identity_zero_layer(*this); }
+  identity_zero_layer* copy() const override
+  {
+    return new identity_zero_layer(*this);
+  }
 
   /** @name Serialization */
   ///@{
@@ -58,14 +61,11 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
-
   friend class cereal::access;
-  identity_zero_layer()
-    : identity_zero_layer(nullptr)
-  {}
+  identity_zero_layer() : identity_zero_layer(nullptr) {}
 
-
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
 
@@ -79,8 +79,8 @@ protected:
             << "has input tensors with incompatible dimensions (";
         for (int j = 0; j < this->get_num_parents(); ++j) {
           const auto& dims = this->get_input_dims(j);
-          err << (j > 0 ? ", " : "")
-              << "layer \"" << parents[j]->get_name() << "\" outputs ";
+          err << (j > 0 ? ", " : "") << "layer \"" << parents[j]->get_name()
+              << "\" outputs ";
           for (size_t k = 0; k < dims.size(); ++k) {
             err << (k > 0 ? " x " : "") << dims[k];
           }
@@ -91,29 +91,35 @@ protected:
     }
   }
 
-  void fp_compute() override {
+  void fp_compute() override
+  {
     if (this->is_frozen()) {
       El::Zero(this->get_activations());
-    } else {
+    }
+    else {
       El::Copy(this->get_prev_activations(), this->get_activations());
     }
   }
 
-  void bp_compute() override{
+  void bp_compute() override
+  {
     if (this->is_frozen()) {
       El::Zero(this->get_error_signals());
-    } else {
+    }
+    else {
       El::Copy(this->get_prev_error_signals(), this->get_error_signals());
     }
   }
-
 };
 
-
 #ifndef LBANN_IDENTITY_ZERO_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class identity_zero_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class identity_zero_layer<T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class identity_zero_layer<T,                                 \
+                                            data_layout::DATA_PARALLEL,        \
+                                            Device>;                           \
+  extern template class identity_zero_layer<T,                                 \
+                                            data_layout::MODEL_PARALLEL,       \
+                                            Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

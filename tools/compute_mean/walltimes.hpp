@@ -27,47 +27,49 @@
 
 #ifndef _TOOLS_COMPUTE_MEAN_WALLTIMES_HPP_
 #define _TOOLS_COMPUTE_MEAN_WALLTIMES_HPP_
+#include "mpi_states.hpp"
 #include <chrono>
 #include <vector>
-#include "mpi_states.hpp"
-
 
 namespace tools_compute_mean {
 
 /** Return time in fractional seconds since an epoch. */
-inline double get_time() {
+inline double get_time()
+{
   using namespace std::chrono;
-  return duration_cast<duration<double>>(
-           steady_clock::now().time_since_epoch()).count();
+  return duration_cast<duration<double>>(steady_clock::now().time_since_epoch())
+    .count();
 }
 
-class walltimes {
- public:
+class walltimes
+{
+public:
   double m_total;
   double m_load;
   double m_decode;
   double m_preprocess;
   double m_write;
 
-  walltimes() :
-    m_total(0.0),
-    m_load(0.0),
-    m_decode(0.0),
-    m_preprocess(0.0),
-    m_write(0.0) {}
+  walltimes()
+    : m_total(0.0), m_load(0.0), m_decode(0.0), m_preprocess(0.0), m_write(0.0)
+  {}
 
-  std::vector<double> get() const {
+  std::vector<double> get() const
+  {
     return {m_total, m_load, m_decode, m_preprocess, m_write};
   }
 
-  std::vector<std::string> get_names() const {
+  std::vector<std::string> get_names() const
+  {
     return {"total", "load", "decode", "preprocess", "write"};
   }
 };
 
 void collect_times(const std::vector<double>& localTimes,
-                   std::vector<double>& avgTimes, std::vector<double>& minTimes,
-                   std::vector<double>& maxTimes, std::vector<double>& stdTimes,
+                   std::vector<double>& avgTimes,
+                   std::vector<double>& minTimes,
+                   std::vector<double>& maxTimes,
+                   std::vector<double>& stdTimes,
                    const mpi_states& ms);
 
 void summarize_walltimes(walltimes& wt, mpi_states& ms);

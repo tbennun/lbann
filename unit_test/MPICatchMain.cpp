@@ -64,9 +64,8 @@ int main(int argc, char* argv[])
   Catch::Session session;
 
   int hang_rank = -1;
-  auto cli =
-    session.cli() | Opt(hang_rank, "Rank to hang")["--hang-rank"](
-                      "Hang this rank to attach a debugger.");
+  auto cli = session.cli() | Opt(hang_rank, "Rank to hang")["--hang-rank"](
+                               "Hang this rank to attach a debugger.");
   session.cli(cli);
 
   // Parse the command line

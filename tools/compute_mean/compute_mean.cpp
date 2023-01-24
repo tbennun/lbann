@@ -25,15 +25,16 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
-#include "mpi_states.hpp"
-#include "walltimes.hpp"
-#include "params.hpp"
 #include "image_list.hpp"
-#include "process_images.hpp"
 #include "lbann/utils/random.hpp"
+#include "mpi_states.hpp"
+#include "params.hpp"
+#include "process_images.hpp"
+#include "walltimes.hpp"
+#include <iostream>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   using namespace tools_compute_mean;
 
   mpi_states ms;
@@ -56,7 +57,8 @@ int main(int argc, char *argv[]) {
 
   // Load the image list
   image_list img_list(mp.get_data_path_file(), mp.to_write_cropped(), ms);
-  if (mp.check_to_create_dirs_only()) return 0;
+  if (mp.check_to_create_dirs_only())
+    return 0;
 
   // Check the effective number of ranks which have data to process
   ms.set_effective_num_ranks(img_list.get_effective_num_ranks());
@@ -64,7 +66,8 @@ int main(int argc, char *argv[]) {
     ms.abort("No image to process!");
   }
   if (ms.is_root() && (ms.get_effective_num_ranks() != ms.get_num_ranks())) {
-    std::cerr << "Number of effective ranks: " << ms.get_effective_num_ranks() << std::endl;
+    std::cerr << "Number of effective ranks: " << ms.get_effective_num_ranks()
+              << std::endl;
   }
 
   // The main loop of processing images and extracting the mean

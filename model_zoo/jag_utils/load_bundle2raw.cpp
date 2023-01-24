@@ -30,24 +30,24 @@
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
 #include "lbann/lbann.hpp"
 #include "lbann/utils/jag_utils.hpp"
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
 #include <time.h>
+#include <vector>
 
 using namespace lbann;
 
+void get_scalar_names(std::vector<std::string>& s);
 
-void get_scalar_names(std::vector<std::string> &s);
-
-void get_input_names(std::vector<std::string> &s);
+void get_input_names(std::vector<std::string>& s);
 
 //==========================================================================
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
   const int rank = comm->get_rank_in_world();
@@ -73,18 +73,24 @@ int main(int argc, char *argv[]) {
     if (arg_parser.get<std::string>(LBANN_OPTION_FILELIST) == "" ||
         arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_DIR) == "") {
       if (master) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string> --output_dir=<string>");
+        throw lbann_exception(std::string{} + __FILE__ + " " +
+                              std::to_string(__LINE__) +
+                              " :: usage: " + argv[0] +
+                              " --filelist=<string> --output_dir=<string>");
       }
     }
 
-    const std::string dir = arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_DIR);
+    const std::string dir =
+      arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_DIR);
 
     if (master) {
       std::stringstream s;
       s << "mkdir -p " << arg_parser.get<std::string>(LBANN_OPTION_OUTPUT_DIR);
       int r = system(s.str().c_str());
       if (r != 0) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: system call failed: " + s.str());
+        throw lbann_exception(std::string{} + __FILE__ + " " +
+                              std::to_string(__LINE__) +
+                              " :: system call failed: " + s.str());
       }
     }
 
@@ -122,45 +128,61 @@ int main(int argc, char *argv[]) {
     sprintf(b, "%s/tmp.%d", dir.c_str(), rank);
     std::ofstream out(b, std::ios::out | std::ios::binary);
     if (!out) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + b + " for writing");
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) + " :: failed to open " +
+                            b + " for writing");
     }
 
-    sprintf(b, "%s/sample_index.%d",   dir.c_str(), rank);
+    sprintf(b, "%s/sample_index.%d", dir.c_str(), rank);
     std::ofstream out2(b);
     if (!out) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + b + " for writing");
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) + " :: failed to open " +
+                            b + " for writing");
     }
 
     size_t h = 0;
-    for (size_t j=rank; j<files.size(); j+= np) {
+    for (size_t j = rank; j < files.size(); j += np) {
       h += 1;
-      if (h % 10 == 0) std::cout << rank << " :: processed " << h << " files\n";
+      if (h % 10 == 0)
+        std::cout << rank << " :: processed " << h << " files\n";
 
       try {
-std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
-        hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( files[j].c_str() );
-      } catch (...) {
-        std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n";
+        std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
+        hdf5_file_hnd =
+          conduit::relay::io::hdf5_open_file_for_read(files[j].c_str());
+      }
+      catch (...) {
+        std::cerr << rank
+                  << " :: exception hdf5_open_file_for_read: " << files[j]
+                  << "\n";
         continue;
       }
       out2 << ">" << files[j] << "\n";
 
       std::vector<std::string> cnames;
       try {
-        conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-      } catch (...) {
-        std::cerr << rank << " :: exception hdf5_group_list_child_names; " << files[j] << "\n";
+        conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd,
+                                                        "/",
+                                                        cnames);
+      }
+      catch (...) {
+        std::cerr << rank << " :: exception hdf5_group_list_child_names; "
+                  << files[j] << "\n";
         continue;
       }
-std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
+      std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
 
-      for (size_t i=0; i<cnames.size(); i++) {
+      for (size_t i = 0; i < cnames.size(); i++) {
 
         key = "/" + cnames[i] + "/performance/success";
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
-        } catch (...) {
-          std::cerr << rank << " :: exception reading success flag: " << files[j] << "\n";
+        }
+        catch (...) {
+          std::cerr << rank
+                    << " :: exception reading success flag: " << files[j]
+                    << "\n";
           continue;
         }
 
@@ -191,40 +213,53 @@ std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
 
     if (master) {
       std::stringstream s3;
-      s3 << "cat " << dir << "/tmp* > " << dir << "/data.bin; rm -f " << dir << "/tmp*";
+      s3 << "cat " << dir << "/tmp* > " << dir << "/data.bin; rm -f " << dir
+         << "/tmp*";
       int r = system(s3.str().c_str());
       if (r != 0) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: system call failed: " + s3.str());
+        throw lbann_exception(std::string{} + __FILE__ + " " +
+                              std::to_string(__LINE__) +
+                              " :: system call failed: " + s3.str());
       }
       s3.clear();
       s3.str("");
-      s3 << "cat " << dir << "/sample_index* > " << dir << "/sample_idx.txt; rm -f " << dir << "/sample_index*";
+      s3 << "cat " << dir << "/sample_index* > " << dir
+         << "/sample_idx.txt; rm -f " << dir << "/sample_index*";
       r = system(s3.str().c_str());
       if (r != 0) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: system call failed: " + s3.str());
+        throw lbann_exception(std::string{} + __FILE__ + " " +
+                              std::to_string(__LINE__) +
+                              " :: system call failed: " + s3.str());
       }
     }
 
     int global_num_samples;
-    //int global_num_samples = comm->reduce<int>(num_samples, comm->get_world_comm());
-    MPI_Reduce(&num_samples, &global_num_samples, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    // int global_num_samples = comm->reduce<int>(num_samples,
+    // comm->get_world_comm());
+    MPI_Reduce(&num_samples,
+               &global_num_samples,
+               1,
+               MPI_INT,
+               MPI_SUM,
+               0,
+               MPI_COMM_WORLD);
 
     if (master) {
       out2.open(dir + "/index.txt");
       if (!out2) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + dir  + "/index.txt for writing");
+        throw lbann_exception(std::string{} + __FILE__ + " " +
+                              std::to_string(__LINE__) + " :: failed to open " +
+                              dir + "/index.txt for writing");
       }
-      out2 << "num_samples: " << global_num_samples << "\n"
-          << index.str();
+      out2 << "num_samples: " << global_num_samples << "\n" << index.str();
       out2.close();
-
     }
-
-
-  } catch (exception const &e) {
+  }
+  catch (exception const& e) {
     El::ReportException(e);
     return EXIT_FAILURE;
-  } catch (std::exception const &e) {
+  }
+  catch (std::exception const& e) {
     El::ReportException(e);
     return EXIT_FAILURE;
   }
@@ -233,8 +268,8 @@ std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
   return EXIT_SUCCESS;
 }
 
-
-void get_input_names(std::vector<std::string> &s) {
+void get_input_names(std::vector<std::string>& s)
+{
   s.push_back("shape_model_initial_modes:(4,3)");
   s.push_back("betti_prl15_trans_u");
   s.push_back("betti_prl15_trans_v");
@@ -242,7 +277,8 @@ void get_input_names(std::vector<std::string> &s) {
   s.push_back("shape_model_initial_modes:(1,0)");
 }
 
-void get_scalar_names(std::vector<std::string> &s) {
+void get_scalar_names(std::vector<std::string>& s)
+{
   s.push_back("BWx");
   s.push_back("BT");
   s.push_back("tMAXt");

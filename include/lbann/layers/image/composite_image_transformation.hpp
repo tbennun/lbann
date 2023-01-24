@@ -32,18 +32,23 @@
 
 namespace lbann {
 
-/** @brief Rotate a image clockwise around its center, then shear , then translate
+/** @brief Rotate a image clockwise around its center, then shear , then
+ * translate
  *
  *  Expects 4 inputs: a 3D image tensor in CHW format, a scalar
  *  rotation angle, a tensor for (X,Y) shear factor, a tensor
  *  for (X,Y) translate.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class composite_image_transformation_layer : public data_type_layer<TensorDataType> {
-  static_assert(Layout == data_layout::DATA_PARALLEL,
-                "composite_image_transformation_layer only supports DATA_PARALLEL");
+class composite_image_transformation_layer
+  : public data_type_layer<TensorDataType>
+{
+  static_assert(
+    Layout == data_layout::DATA_PARALLEL,
+    "composite_image_transformation_layer only supports DATA_PARALLEL");
   static_assert(Device == El::Device::CPU,
                 "composite_image_transformation_layer only supports CPU");
+
 public:
   /** @name Public Types */
   ///@{
@@ -53,15 +58,15 @@ public:
 
   ///@}
 
-
 public:
-
-  composite_image_transformation_layer(lbann_comm *comm)
-    : data_type_layer<TensorDataType>(comm) {
-		 this->m_expected_num_parent_layers = 4;
+  composite_image_transformation_layer(lbann_comm* comm)
+    : data_type_layer<TensorDataType>(comm)
+  {
+    this->m_expected_num_parent_layers = 4;
   }
 
-  composite_image_transformation_layer* copy() const override {
+  composite_image_transformation_layer* copy() const override
+  {
     return new composite_image_transformation_layer(*this);
   }
 
@@ -73,20 +78,23 @@ public:
 
   ///@}
 
-  std::string get_type() const override { return "composite image transformation"; }
+  std::string get_type() const override
+  {
+    return "composite image transformation";
+  }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
   void fp_compute() override;
 
 protected:
-
   friend class cereal::access;
   composite_image_transformation_layer()
     : composite_image_transformation_layer(nullptr)
   {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
     // Get input dimensions
@@ -98,16 +106,23 @@ protected:
       for (size_t i = 0; i < dims.size(); ++i) {
         ss << (i > 0 ? " x " : "") << dims[i];
       }
-      LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
-        "expects a 3D input in CHW format, ",
-        "but input dimensions are ",ss.str());
+      LBANN_ERROR(this->get_type(),
+                  " layer \"",
+                  this->get_name(),
+                  "\" ",
+                  "expects a 3D input in CHW format, ",
+                  "but input dimensions are ",
+                  ss.str());
     }
   }
 };
 
 #ifndef LBANN_COMPOSITE_IMAGE_TRANSFORMATION_LAYER_INSTANTIATE
-#define PROTO(T) \
-  extern template class composite_image_transformation_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  extern template class composite_image_transformation_layer<                  \
+    T,                                                                         \
+    data_layout::DATA_PARALLEL,                                                \
+    El::Device::CPU>
 
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO

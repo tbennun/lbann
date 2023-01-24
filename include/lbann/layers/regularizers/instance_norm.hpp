@@ -47,15 +47,16 @@ namespace lbann {
  *
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class instance_norm_layer : public data_type_layer<TensorDataType> {
+class instance_norm_layer : public data_type_layer<TensorDataType>
+{
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "instance norm layer only supports data parallel layout");
-public:
 
+public:
   /**
    *  @param epsilon    Small number to avoid division by zero
    */
-  instance_norm_layer(TensorDataType epsilon=El::To<TensorDataType>(1e-5));
+  instance_norm_layer(TensorDataType epsilon = El::To<TensorDataType>(1e-5));
 
   instance_norm_layer(const instance_norm_layer& other) = default;
   instance_norm_layer& operator=(const instance_norm_layer& other) = default;
@@ -75,20 +76,17 @@ public:
   ///@}
 
 protected:
-
   void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_compute() override;
   void bp_compute() override;
 
 private:
-
   /** Small number to avoid division by zero. */
   TensorDataType m_epsilon;
 
   /** Contains per-channel sums and sums of squares. */
-  El::Matrix<TensorDataType,Device> m_workspace;
-
+  El::Matrix<TensorDataType, Device> m_workspace;
 };
 
 // Builder function
@@ -99,40 +97,53 @@ LBANN_DEFINE_LAYER_BUILDER(instance_norm);
 // =========================================================
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-instance_norm_layer<TensorDataType,Layout,Device>::instance_norm_layer(
+instance_norm_layer<TensorDataType, Layout, Device>::instance_norm_layer(
   TensorDataType epsilon)
   : data_type_layer<TensorDataType>(nullptr), m_epsilon{epsilon}
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-instance_norm_layer<TensorDataType,Layout,Device>* instance_norm_layer<TensorDataType,Layout,Device>::copy() const {
+instance_norm_layer<TensorDataType, Layout, Device>*
+instance_norm_layer<TensorDataType, Layout, Device>::copy() const
+{
   return new instance_norm_layer(*this);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::string instance_norm_layer<TensorDataType,Layout,Device>::get_type() const {
+std::string
+instance_norm_layer<TensorDataType, Layout, Device>::get_type() const
+{
   return "instance norm";
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-data_layout instance_norm_layer<TensorDataType,Layout,Device>::get_data_layout() const {
+data_layout
+instance_norm_layer<TensorDataType, Layout, Device>::get_data_layout() const
+{
   return Layout;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-El::Device instance_norm_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
+El::Device
+instance_norm_layer<TensorDataType, Layout, Device>::get_device_allocation()
+  const
+{
   return Device;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-description instance_norm_layer<TensorDataType,Layout,Device>::get_description() const {
+description
+instance_norm_layer<TensorDataType, Layout, Device>::get_description() const
+{
   auto desc = data_type_layer<TensorDataType>::get_description();
   desc.add("Epsilon", m_epsilon);
   return desc;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void instance_norm_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+void instance_norm_layer<TensorDataType, Layout, Device>::setup_dims(
+  DataReaderMetaData& dr_metadata)
+{
   data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   this->set_output_dims(this->get_input_dims());
 }
@@ -142,9 +153,10 @@ void instance_norm_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMet
 // =========================================================
 
 #ifndef LBANN_INSTANCE_NORM_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device)                 \
-  extern template class instance_norm_layer<    \
-    T, data_layout::DATA_PARALLEL, Device>;
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class instance_norm_layer<T,                                 \
+                                            data_layout::DATA_PARALLEL,        \
+                                            Device>;
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #endif // LBANN_INSTANCE_NORM_LAYER_INSTANTIATE

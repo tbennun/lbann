@@ -31,8 +31,8 @@
 #include "lbann/comm.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/detect_El_mpi.hpp"
-#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
+#include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/hash.hpp"
@@ -82,7 +82,8 @@ public:
   ///@{
 
   /** @brief Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive& ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
   /** @name Configuration */
@@ -217,12 +218,11 @@ public:
                                     execution_mode mode);
 
   ExecutionContext& get_execution_context(observer_ptr<model> model,
-                                           execution_mode mode);
+                                          execution_mode mode);
 
   ExecutionContext& get_execution_context(execution_context_key_pair_t key);
 
-  bool execution_context_valid(model& m,
-                               execution_mode mode) const noexcept;
+  bool execution_context_valid(model& m, execution_mode mode) const noexcept;
 
   bool execution_context_valid(execution_context_key_pair_t key) const noexcept;
 
@@ -341,7 +341,6 @@ private:
 
   /** @brief Flag that allows input layers to fetch data in the background. */
   bool m_background_io_allowed;
-
 };
 
 /** @brief Get a reference to the global trainer visible to this rank. */

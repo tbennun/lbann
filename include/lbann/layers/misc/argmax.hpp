@@ -38,14 +38,14 @@ namespace lbann {
  *  maximum value, outputs the index of the first one.
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class argmax_layer : public data_type_layer<TensorDataType> {
+class argmax_layer : public data_type_layer<TensorDataType>
+{
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "argmax layer only supports data parallel layout");
-  static_assert(Device == El::Device::CPU,
-                "argmax layer only supports CPU");
-public:
+  static_assert(Device == El::Device::CPU, "argmax layer only supports CPU");
 
-  argmax_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) { }
+public:
+  argmax_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) {}
   argmax_layer* copy() const override { return new argmax_layer(*this); }
 
   /** @name Serialization */
@@ -61,34 +61,39 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
 protected:
-
   friend class cereal::access;
-  argmax_layer()
-    : argmax_layer(nullptr)
-  {}
+  argmax_layer() : argmax_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims({1});
 
     // Make sure input tensor is 1-D
     const auto input_dims = this->get_input_dims();
     if (input_dims.size() != 1) {
-      LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
+      LBANN_ERROR(get_type(),
+                  " layer \"",
+                  this->get_name(),
+                  "\" ",
                   "expects a 1-D input tensor, ",
-                  "but parent layer \"",this->get_parent_layer().get_name(),"\" ",
-                  "outputs a ",input_dims.size(),"-D tensor");
+                  "but parent layer \"",
+                  this->get_parent_layer().get_name(),
+                  "\" ",
+                  "outputs a ",
+                  input_dims.size(),
+                  "-D tensor");
     }
-
   }
 
   void fp_compute() override;
 };
 
-
 #ifndef LBANN_ARGMAX_LAYER_INSTANTIATE
-#define PROTO(T) \
-  extern template class argmax_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO(T)                                                               \
+  extern template class argmax_layer<T,                                        \
+                                     data_layout::DATA_PARALLEL,               \
+                                     El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

@@ -31,23 +31,26 @@
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_hdf5.hpp"
 #include "conduit/conduit_relay_mpi.hpp"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
 #include "lbann/lbann.hpp"
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 using namespace lbann;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
   int np = comm->get_procs_in_world();
 
   if (master) {
     if (np != 2) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: please run with exactly two processes");
+      throw lbann_exception(std::string{} + __FILE__ + " " +
+                            std::to_string(__LINE__) +
+                            " :: please run with exactly two processes");
     }
   }
 
@@ -73,11 +76,12 @@ int main(int argc, char *argv[]) {
       std::cout << "\nP_1 received the following node from P_0:\n";
       n2.print();
     }
-
-  } catch (std::exception& e) {
+  }
+  catch (std::exception& e) {
     El::ReportException(e);
     return EXIT_FAILURE;
-  } catch (...) {
+  }
+  catch (...) {
     std::cerr << "unknown exception in main\n";
     return EXIT_FAILURE;
   }
@@ -85,5 +89,5 @@ int main(int argc, char *argv[]) {
   // Clean up
   return EXIT_SUCCESS;
 
-#endif //if 0
+#endif // if 0
 }

@@ -36,7 +36,8 @@ namespace lbann {
  *  @f[ \lVert x\rVert_1 = \sum\limits_{i} | x_i | @f]
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class l1_norm_layer : public data_type_layer<TensorDataType> {
+class l1_norm_layer : public data_type_layer<TensorDataType>
+{
 public:
   /** @name Public Types */
   ///@{
@@ -47,17 +48,16 @@ public:
   ///@}
 
 public:
-
-  l1_norm_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
+  l1_norm_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) {}
 
   l1_norm_layer(const l1_norm_layer& other)
     : data_type_layer<TensorDataType>(other),
-      m_workspace(other.m_workspace ?
-                  other.m_workspace->Copy() : nullptr) {}
-  l1_norm_layer& operator=(const l1_norm_layer& other) {
+      m_workspace(other.m_workspace ? other.m_workspace->Copy() : nullptr)
+  {}
+  l1_norm_layer& operator=(const l1_norm_layer& other)
+  {
     data_type_layer<TensorDataType>::operator=(other);
-    m_workspace.reset(other.m_workspace ?
-                      other.m_workspace->Copy() : nullptr);
+    m_workspace.reset(other.m_workspace ? other.m_workspace->Copy() : nullptr);
     return *this;
   }
 
@@ -75,12 +75,14 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override {
+  void setup_dims(DataReaderMetaData& dr_metadata) override
+  {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims({1});
   }
 
-  void setup_data(size_t max_mini_batch_size) override {
+  void setup_data(size_t max_mini_batch_size) override
+  {
     data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Initialize workspace
@@ -92,10 +94,10 @@ public:
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
     }
 #endif // HYDROGEN_HAVE_CUB
-
   }
 
-  void fp_compute() override {
+  void fp_compute() override
+  {
 
     // Initialize workspace
     m_workspace->Empty();
@@ -110,10 +112,10 @@ public:
 
     // Clean up
     m_workspace->Empty();
-
   }
 
-  void bp_compute() override {
+  void bp_compute() override
+  {
 
     // Initialize workspace
     m_workspace->Empty();
@@ -125,18 +127,13 @@ public:
 
     // Clean up
     m_workspace->Empty();
-
   }
 
 protected:
-
   friend class cereal::access;
-  l1_norm_layer()
-    : l1_norm_layer(nullptr)
-  {}
+  l1_norm_layer() : l1_norm_layer(nullptr) {}
 
 private:
-
   /** Compute local contributions to L2 norm. */
   void local_fp_compute();
   /** Compute local gradients. */
@@ -144,16 +141,13 @@ private:
 
   /** Workspace matrix. */
   std::unique_ptr<AbsDistMatrixType> m_workspace;
-
 };
 
 #ifndef LBANN_L1_NORM_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device)             \
-  extern template class l1_norm_layer<      \
-    T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class l1_norm_layer<      \
-    T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)                                                \
+  extern template class l1_norm_layer<T, data_layout::DATA_PARALLEL, Device>;  \
+  extern template class l1_norm_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

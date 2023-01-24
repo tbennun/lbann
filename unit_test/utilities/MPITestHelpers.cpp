@@ -44,10 +44,7 @@ void register_world_comm(lbann::lbann_comm& comm) noexcept
   global_comm_ = &comm;
 }
 
-void reset_world_comm() noexcept
-{
-  global_comm_ = nullptr;
-}
+void reset_world_comm() noexcept { global_comm_ = nullptr; }
 } // namespace expert
 } // namespace utilities
 } // namespace unit_test

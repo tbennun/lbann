@@ -32,8 +32,8 @@
 
 namespace lbann {
 
-typedef std::mt19937 rng_gen;  // Mersenne Twister
-typedef std::minstd_rand fast_rng_gen;  // Minimum standard, LC
+typedef std::mt19937 rng_gen;          // Mersenne Twister
+typedef std::minstd_rand fast_rng_gen; // Minimum standard, LC
 
 /**
  * Return a reference to the global LBANN random number generator.
@@ -64,7 +64,8 @@ rng_gen& get_data_seq_generator();
  * is roughly five times faster than that one.
  */
 template <typename Generator, typename T>
-inline T fast_rand_int(Generator& g, T max) {
+inline T fast_rand_int(Generator& g, T max)
+{
   typename Generator::result_type x;
   do {
     x = g();
@@ -77,15 +78,17 @@ inline T fast_rand_int(Generator& g, T max) {
  * Do not call this if max is not a power of 2.
  */
 template <typename Generator, typename T>
-inline T fast_rand_int_pow2(Generator& g, T max) {
+inline T fast_rand_int_pow2(Generator& g, T max)
+{
   typename Generator::result_type x;
   max -= 1;
-  const typename Generator::result_type upper = Generator::max() -
-      (Generator::max() & (typename Generator::result_type) max);
+  const typename Generator::result_type upper =
+    Generator::max() -
+    (Generator::max() & (typename Generator::result_type)max);
   do {
     x = g();
   } while (x >= upper);
-  return x & ((typename Generator::result_type) max);
+  return x & ((typename Generator::result_type)max);
 }
 
 /**
@@ -110,22 +113,21 @@ void init_random(int seed = -1);
  */
 void init_data_seq_random(int seed = -1);
 
-template<typename DistType,typename DType=DataType>
-class rng {
+template <typename DistType, typename DType = DataType>
+class rng
+{
 
- private:
+private:
   DistType m_dist; // Distribution type
 
- public:
-  typename DistType::result_type gen() {
-    return m_dist(get_generator());
-  }
-  rng() { }
+public:
+  typename DistType::result_type gen() { return m_dist(get_generator()); }
+  rng() {}
   // bernoulli_distribution with prob p
   rng(DType p) : m_dist(p) {}
   // (uniform) real distribution between min/mean and max/stdev
-  rng(DType a,DType b) : m_dist(a,b) {}
+  rng(DType a, DType b) : m_dist(a, b) {}
 };
 
-}// end namespace
+} // namespace lbann
 #endif // LBANN_UTILS_RNG_HPP

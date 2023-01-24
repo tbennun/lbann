@@ -36,7 +36,8 @@
 #include <lbann/utils/options.hpp>
 #include <lbann/utils/random_number_generators.hpp>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
 #ifdef LBANN_HAS_DNN_LIB
   hydrogen::gpu::Initialize();
   lbann::dnn_lib::initialize();

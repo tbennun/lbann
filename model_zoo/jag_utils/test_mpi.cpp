@@ -31,16 +31,17 @@
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
 #include "conduit/conduit_relay_mpi.hpp"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
 #include "lbann/lbann.hpp"
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 using namespace lbann;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
 
 #if 0
 
@@ -88,5 +89,5 @@ int main(int argc, char *argv[]) {
   // Clean up
   return EXIT_SUCCESS;
 
-#endif //if 0
+#endif // if 0
 }

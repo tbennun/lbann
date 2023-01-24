@@ -33,7 +33,8 @@
 namespace lbann {
 
 template <class Archive>
-void data_coordinator::serialize( Archive & ar ) {
+void data_coordinator::serialize(Archive& ar)
+{
   ar(/*CEREAL_NVP(m_io_buffer),*/
      CEREAL_NVP(m_datasets)/*,
      CEREAL_NVP(m_active_data_fields),
@@ -41,14 +42,18 @@ void data_coordinator::serialize( Archive & ar ) {
      CEREAL_NVP(m_data_set_processed)*/);
 }
 
-void data_coordinator::setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers) {
+void data_coordinator::setup(
+  thread_pool& io_thread_pool,
+  int max_mini_batch_size,
+  std::map<execution_mode, generic_data_reader*> data_readers)
+{
   m_io_thread_pool = &io_thread_pool;
 
   m_data_readers = data_readers;
 
   // Initialize the data sets
-  for(auto m : execution_mode_iterator()) {
-    if(this->m_data_readers.count(m)) {
+  for (auto m : execution_mode_iterator()) {
+    if (this->m_data_readers.count(m)) {
       this->m_datasets[m].total_samples() = m_data_readers[m]->get_num_data();
     }
   }
@@ -56,17 +61,18 @@ void data_coordinator::setup(thread_pool& io_thread_pool, int max_mini_batch_siz
   /// @todo BVE FIXME the list of execution modes should not include
   // ones will null data readers.  Fix this in next PR.
   // Setup data readers
-  for(auto&& dr: m_data_readers) {
-    if (!dr.second) continue;
-    dr.second->setup(m_io_thread_pool->get_num_threads(),
-                     m_io_thread_pool);
+  for (auto&& dr : m_data_readers) {
+    if (!dr.second)
+      continue;
+    dr.second->setup(m_io_thread_pool->get_num_threads(), m_io_thread_pool);
   }
 
   /** Calculate how many iterations are required for training, testing,
    *  and validation given a specified mini-batch size.
    */
-  for(auto&& dr: m_data_readers) {
-    if (!dr.second) continue;
+  for (auto&& dr : m_data_readers) {
+    if (!dr.second)
+      continue;
     calculate_num_iterations_per_epoch(max_mini_batch_size, dr.second);
   }
 
@@ -80,26 +86,41 @@ void data_coordinator::setup(thread_pool& io_thread_pool, int max_mini_batch_siz
       std::cout << "\nUSING DATA STORE!\n\n";
     }
     for (auto&& r : m_data_readers) {
-      if (!r.second) continue;
+      if (!r.second)
+        continue;
       r.second->setup_data_store(max_mini_batch_size);
     }
   }
 }
 
-void data_coordinator::calculate_num_iterations_per_epoch(int max_mini_batch_size, generic_data_reader *data_reader) {
-  if(data_reader == nullptr) { return; }
-  // If the data reader does not have any data bail out (e.g. unused validation reader)
-  if(data_reader->get_num_data() == 0) { return; }
+void data_coordinator::calculate_num_iterations_per_epoch(
+  int max_mini_batch_size,
+  generic_data_reader* data_reader)
+{
+  if (data_reader == nullptr) {
+    return;
+  }
+  // If the data reader does not have any data bail out (e.g. unused validation
+  // reader)
+  if (data_reader->get_num_data() == 0) {
+    return;
+  }
 
-  if(max_mini_batch_size > data_reader->get_num_data()) {
+  if (max_mini_batch_size > data_reader->get_num_data()) {
     max_mini_batch_size = data_reader->get_num_data();
   }
 
-  /// Check to make sure that there is enough data for all of the parallel readers
-  int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, this->m_comm->get_procs_per_trainer());
+  /// Check to make sure that there is enough data for all of the parallel
+  /// readers
+  int num_parallel_readers_per_model =
+    compute_max_num_parallel_readers(data_reader->get_num_data(),
+                                     max_mini_batch_size,
+                                     this->m_comm->get_procs_per_trainer());
   data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
-  if(num_parallel_readers_per_model == 0
-     || (num_parallel_readers_per_model != this->m_comm->get_procs_per_trainer() && num_parallel_readers_per_model != max_mini_batch_size)) {
+  if (num_parallel_readers_per_model == 0 ||
+      (num_parallel_readers_per_model !=
+         this->m_comm->get_procs_per_trainer() &&
+       num_parallel_readers_per_model != max_mini_batch_size)) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: generic_data_distribution: number of parallel readers is zero");
@@ -114,15 +135,17 @@ void data_coordinator::calculate_num_iterations_per_epoch(int max_mini_batch_siz
 
   /// Set the basic parameters for stride and offset of the data reader
   int batch_stride = max_mini_batch_size;
-  int base_offset  = this->m_comm->get_rank_in_trainer();
+  int base_offset = this->m_comm->get_rank_in_trainer();
 #ifdef LBANN_HAS_DISTCONV
-  base_offset  = dc::get_input_rank(*(this->m_comm)) / dc::get_number_of_io_partitions();
+  base_offset =
+    dc::get_input_rank(*(this->m_comm)) / dc::get_number_of_io_partitions();
 #endif
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);
   data_reader->set_stride_to_next_mini_batch(batch_stride);
 #ifdef LBANN_HAS_DISTCONV
-  data_reader->set_sample_stride(num_parallel_readers_per_model / dc::get_number_of_io_partitions());
+  data_reader->set_sample_stride(num_parallel_readers_per_model /
+                                 dc::get_number_of_io_partitions());
 #else
   data_reader->set_sample_stride(num_parallel_readers_per_model);
 #endif
@@ -133,38 +156,53 @@ void data_coordinator::calculate_num_iterations_per_epoch(int max_mini_batch_siz
   data_reader->set_initial_position();
 
   /// By default each data reader will plan to process the entire data set
-  int num_iterations_per_epoch = ceil((float) data_reader->get_num_data() / (float) max_mini_batch_size);
+  int num_iterations_per_epoch =
+    ceil((float)data_reader->get_num_data() / (float)max_mini_batch_size);
   int last_mini_batch_size = data_reader->get_num_data() % max_mini_batch_size;
-  if(last_mini_batch_size == 0) {
+  if (last_mini_batch_size == 0) {
     last_mini_batch_size = max_mini_batch_size;
   }
   data_reader->set_num_iterations_per_epoch(num_iterations_per_epoch);
   data_reader->set_last_mini_batch_size(last_mini_batch_size);
-  data_reader->set_stride_to_last_mini_batch(data_reader->get_stride_to_next_mini_batch());
+  data_reader->set_stride_to_last_mini_batch(
+    data_reader->get_stride_to_next_mini_batch());
   data_reader->set_global_mini_batch_size(max_mini_batch_size);
   data_reader->set_global_last_mini_batch_size(last_mini_batch_size);
   return;
 }
 
-void data_coordinator::calculate_num_iterations_per_epoch(int mini_batch_size) {
-  for(auto&& dr: m_data_readers) {
-    if (!dr.second) continue;
+void data_coordinator::calculate_num_iterations_per_epoch(int mini_batch_size)
+{
+  for (auto&& dr : m_data_readers) {
+    if (!dr.second)
+      continue;
     calculate_num_iterations_per_epoch(mini_batch_size, dr.second);
   }
 }
 
-int data_coordinator::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
-  return compute_max_num_parallel_readers(data_set_size, mini_batch_size, requested_num_parallel_readers, this->m_comm);
+int data_coordinator::compute_max_num_parallel_readers(
+  long data_set_size,
+  int mini_batch_size,
+  int requested_num_parallel_readers) const
+{
+  return compute_max_num_parallel_readers(data_set_size,
+                                          mini_batch_size,
+                                          requested_num_parallel_readers,
+                                          this->m_comm);
 }
 
-int data_coordinator::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm) {
+int data_coordinator::compute_max_num_parallel_readers(
+  long data_set_size,
+  int mini_batch_size,
+  int requested_num_parallel_readers,
+  const lbann_comm* comm)
+{
   int num_parallel_readers = requested_num_parallel_readers;
 
-  if(comm->get_procs_per_trainer() != num_parallel_readers) {
+  if (comm->get_procs_per_trainer() != num_parallel_readers) {
     if (comm->am_trainer_master()) {
       std::cout << "Warning the requested number of parallel readers "
-                << num_parallel_readers
-                << " does not match the grid size "
+                << num_parallel_readers << " does not match the grid size "
                 << comm->get_procs_per_trainer()
                 << " OVERRIDING requested number of parallel readers."
                 << std::endl;
@@ -188,62 +226,90 @@ int data_coordinator::compute_max_num_parallel_readers(long data_set_size, int m
   return num_parallel_readers;
 }
 
-size_t data_coordinator::get_num_iterations_per_epoch(execution_mode mode) const {
-  const generic_data_reader *data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_num_iterations_per_epoch() : 0;
+size_t data_coordinator::get_num_iterations_per_epoch(execution_mode mode) const
+{
+  const generic_data_reader* data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_num_iterations_per_epoch()
+                                  : 0;
 }
 
-int data_coordinator::get_current_step_in_epoch(execution_mode mode) const {
-  const generic_data_reader *data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_current_step_in_epoch() : 0;
+int data_coordinator::get_current_step_in_epoch(execution_mode mode) const
+{
+  const generic_data_reader* data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_current_step_in_epoch()
+                                  : 0;
 }
 
-int data_coordinator::get_mini_batch_size(execution_mode mode) const {
-  const generic_data_reader *data_reader = get_data_reader(mode);
+int data_coordinator::get_mini_batch_size(execution_mode mode) const
+{
+  const generic_data_reader* data_reader = get_data_reader(mode);
   return (data_reader != nullptr) ? data_reader->get_mini_batch_size() : 0;
 }
 
-int data_coordinator::get_last_mini_batch_size(execution_mode mode) const {
-  const generic_data_reader *data_reader = get_data_reader(mode);
+int data_coordinator::get_last_mini_batch_size(execution_mode mode) const
+{
+  const generic_data_reader* data_reader = get_data_reader(mode);
   return (data_reader != nullptr) ? data_reader->get_last_mini_batch_size() : 0;
 }
 
-int data_coordinator::get_current_mini_batch_size(execution_mode mode) const {
-  const generic_data_reader *data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_current_mini_batch_size() : 0;
+int data_coordinator::get_current_mini_batch_size(execution_mode mode) const
+{
+  const generic_data_reader* data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_current_mini_batch_size()
+                                  : 0;
 }
 
-int data_coordinator::get_global_mini_batch_size(execution_mode mode) const {
-  const generic_data_reader *data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_global_mini_batch_size() : 0;
+int data_coordinator::get_global_mini_batch_size(execution_mode mode) const
+{
+  const generic_data_reader* data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_global_mini_batch_size()
+                                  : 0;
 }
 
-int data_coordinator::get_current_global_mini_batch_size(execution_mode mode) const {
-  const generic_data_reader *data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_current_global_mini_batch_size() : 0;
+int data_coordinator::get_current_global_mini_batch_size(
+  execution_mode mode) const
+{
+  const generic_data_reader* data_reader = get_data_reader(mode);
+  return (data_reader != nullptr)
+           ? data_reader->get_current_global_mini_batch_size()
+           : 0;
 }
 
-int data_coordinator::get_global_last_mini_batch_size(execution_mode mode) const {
-  const generic_data_reader *data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_global_last_mini_batch_size() : 0;
+int data_coordinator::get_global_last_mini_batch_size(execution_mode mode) const
+{
+  const generic_data_reader* data_reader = get_data_reader(mode);
+  return (data_reader != nullptr)
+           ? data_reader->get_global_last_mini_batch_size()
+           : 0;
 }
 
-int data_coordinator::get_world_master_mini_batch_adjustment(execution_mode mode) const {
-  const generic_data_reader *data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_world_master_mini_batch_adjustment() : 0;
+int data_coordinator::get_world_master_mini_batch_adjustment(
+  execution_mode mode) const
+{
+  const generic_data_reader* data_reader = get_data_reader(mode);
+  return (data_reader != nullptr)
+           ? data_reader->get_world_master_mini_batch_adjustment()
+           : 0;
 }
 
-int data_coordinator::get_current_world_master_mini_batch_adjustment(execution_mode mode, int model_rank) const {
-  const generic_data_reader *data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_current_world_master_mini_batch_adjustment(model_rank) : 0;
+int data_coordinator::get_current_world_master_mini_batch_adjustment(
+  execution_mode mode,
+  int model_rank) const
+{
+  const generic_data_reader* data_reader = get_data_reader(mode);
+  return (data_reader != nullptr)
+           ? data_reader->get_current_world_master_mini_batch_adjustment(
+               model_rank)
+           : 0;
 }
 
 // save state of IO to a checkpoint
-bool data_coordinator::save_to_checkpoint_shared(persist& p) const {
+bool data_coordinator::save_to_checkpoint_shared(persist& p) const
+{
   // save state of data readers from input layer
   data_reader_map_t::const_iterator it;
-  if(p.get_cb_type() == callback_type::execution_context_only
-     || p.get_cb_type() == callback_type::full_checkpoint){
+  if (p.get_cb_type() == callback_type::execution_context_only ||
+      p.get_cb_type() == callback_type::full_checkpoint) {
 
     it = this->m_data_readers.find(execution_mode::training);
     if ((it != this->m_data_readers.end()) && it->second) {
@@ -259,18 +325,20 @@ bool data_coordinator::save_to_checkpoint_shared(persist& p) const {
     }
 
     // if (this->m_comm->am_trainer_master()) {
-    //   write_cereal_archive<const data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
+    //   write_cereal_archive<const data_coordinator>(*this, p,
+    //   execution_mode::training, "_dc.xml");
     // }
   }
   return true;
 }
 
 // reload state of IO from a checkpoint
-bool data_coordinator::load_from_checkpoint_shared(persist& p) {
+bool data_coordinator::load_from_checkpoint_shared(persist& p)
+{
   // save state of data readers from input layer
   data_reader_map_t::const_iterator it;
-  if(p.get_cb_type() == callback_type::execution_context_only
-     || p.get_cb_type() == callback_type::full_checkpoint){
+  if (p.get_cb_type() == callback_type::execution_context_only ||
+      p.get_cb_type() == callback_type::full_checkpoint) {
 
     it = this->m_data_readers.find(execution_mode::training);
     if ((it != this->m_data_readers.end()) && it->second) {
@@ -287,8 +355,9 @@ bool data_coordinator::load_from_checkpoint_shared(persist& p) {
 
     // std::string buf;
     // if (this->m_comm->am_trainer_master()) {
-    //   read_cereal_archive<data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
-    //   buf = create_cereal_archive_binary_string<data_coordinator>(*this);
+    //   read_cereal_archive<data_coordinator>(*this, p,
+    //   execution_mode::training, "_dc.xml"); buf =
+    //   create_cereal_archive_binary_string<data_coordinator>(*this);
     // }
 
     // // TODO: this assumes homogeneous processors
@@ -303,11 +372,12 @@ bool data_coordinator::load_from_checkpoint_shared(persist& p) {
   return true;
 }
 
-bool data_coordinator::save_to_checkpoint_distributed(persist& p) const {
+bool data_coordinator::save_to_checkpoint_distributed(persist& p) const
+{
   // save state of data readers from input layer
   data_reader_map_t::const_iterator it;
-  if(p.get_cb_type() == callback_type::execution_context_only
-     || p.get_cb_type() == callback_type::full_checkpoint) {
+  if (p.get_cb_type() == callback_type::execution_context_only ||
+      p.get_cb_type() == callback_type::full_checkpoint) {
 
     it = this->m_data_readers.find(execution_mode::training);
     if ((it != this->m_data_readers.end()) && it->second) {
@@ -319,15 +389,18 @@ bool data_coordinator::save_to_checkpoint_distributed(persist& p) const {
     }
     it = this->m_data_readers.find(execution_mode::validation);
     if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->save_to_checkpoint_distributed(p, execution_mode::validation);
+      (it->second)
+        ->save_to_checkpoint_distributed(p, execution_mode::validation);
     }
 
-    // write_cereal_archive<const data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
+    // write_cereal_archive<const data_coordinator>(*this, p,
+    // execution_mode::training, "_dc.xml");
   }
   return true;
 }
 
-bool data_coordinator::load_from_checkpoint_distributed(persist& p) {
+bool data_coordinator::load_from_checkpoint_distributed(persist& p)
+{
   // save state of data readers from input layer
   data_reader_map_t::const_iterator it;
   it = this->m_data_readers.find(execution_mode::training);
@@ -340,10 +413,12 @@ bool data_coordinator::load_from_checkpoint_distributed(persist& p) {
   }
   it = this->m_data_readers.find(execution_mode::validation);
   if ((it != this->m_data_readers.end()) && it->second) {
-    (it->second)->load_from_checkpoint_distributed(p, execution_mode::validation);
+    (it->second)
+      ->load_from_checkpoint_distributed(p, execution_mode::validation);
   }
 
-  // read_cereal_archive<data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
+  // read_cereal_archive<data_coordinator>(*this, p, execution_mode::training,
+  // "_dc.xml");
   return true;
 }
 

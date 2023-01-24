@@ -29,13 +29,13 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 
-#include "lbann/trainers/trainer.hpp"
+#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/summary.hpp"
-#include "lbann/execution_algorithms/sgd_execution_context.hpp"
 
 #include <google/protobuf/message.h>
 
@@ -44,16 +44,17 @@
 
 /** @brief A utility macro for easily adding default-constructed sub-class
  *  builders.*/
-#define LBANN_ADD_DEFAULT_CALLBACK_BUILDER(Class, FunctionName)  \
-  inline std::unique_ptr<callback_base> FunctionName(           \
-    const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&) {          \
-    return std::make_unique<Class>();                          \
+#define LBANN_ADD_DEFAULT_CALLBACK_BUILDER(Class, FunctionName)                \
+  inline std::unique_ptr<callback_base> FunctionName(                          \
+    const google::protobuf::Message&,                                          \
+    std::shared_ptr<lbann_summary> const&)                                     \
+  {                                                                            \
+    return std::make_unique<Class>();                                          \
   }
 
-namespace cereal
-{
-  class access;
-}// namespace cereal
+namespace cereal {
+class access;
+} // namespace cereal
 
 namespace lbann {
 
@@ -65,16 +66,17 @@ namespace lbann {
  *  care about.  Callbacks may be passed a lbann_summary instance,
  *  which they can use to log any relevant information.
  */
-class callback_base {
+class callback_base
+{
 public:
-
   /** @name Constructors and destructor */
   ///@{
 
   /** @brief Initialize a callback with an optional batch interval
    */
-  callback_base(int batch_interval = 1) :
-    m_batch_interval(std::max(batch_interval, 1)) {}
+  callback_base(int batch_interval = 1)
+    : m_batch_interval(std::max(batch_interval, 1))
+  {}
   callback_base(const callback_base&) = default;
   virtual ~callback_base() = default;
 
@@ -90,92 +92,92 @@ public:
 
   /** @brief Called once to set up the callback on the trainer
    */
-  virtual void setup(trainer *t) {};
+  virtual void setup(trainer* t){};
 
   /** @brief Called once to set up the callback on the model
    *         (after all layers are set up).
    */
-  virtual void setup(model *m) {};
+  virtual void setup(model* m){};
 
   ///@}
   /** @name Callback hooks */
   ///@{
 
   /** @brief Called at the end of setup. */
-  virtual void on_setup_end(model *m) {}
+  virtual void on_setup_end(model* m) {}
   /** @brief Called at the beginning of training. */
-  virtual void on_train_begin(model *m) {}
+  virtual void on_train_begin(model* m) {}
   /** @brief Called at the end of training. */
-  virtual void on_train_end(model *m) {}
+  virtual void on_train_end(model* m) {}
   /** @brief Called at the end of every phase (multiple epochs) in a
    *         layer-wise model training
    */
-  virtual void on_phase_end(model *m) {}
+  virtual void on_phase_end(model* m) {}
   /** @brief Called at the beginning of each epoch. */
-  virtual void on_epoch_begin(model *m) {}
+  virtual void on_epoch_begin(model* m) {}
   /** @brief Called immediate after the end of each epoch. */
-  virtual void on_epoch_end(model *m) {}
+  virtual void on_epoch_end(model* m) {}
   /** @brief Called at the beginning of a (mini-)batch. */
-  virtual void on_batch_begin(model *m) {}
+  virtual void on_batch_begin(model* m) {}
   /** @brief Called immediately after the end of a (mini-)batch. */
-  virtual void on_batch_end(model *m) {}
+  virtual void on_batch_end(model* m) {}
   /** @brief Called at the beginning of testing. */
-  virtual void on_test_begin(model *m) {}
+  virtual void on_test_begin(model* m) {}
   /** @brief Called immediately after the end of testing. */
-  virtual void on_test_end(model *m) {}
+  virtual void on_test_end(model* m) {}
   /** @brief Called at the beginning of validation. */
-  virtual void on_validation_begin(model *m) {}
+  virtual void on_validation_begin(model* m) {}
   /** @brief Called immediately after the end of validation. */
-  virtual void on_validation_end(model *m) {}
+  virtual void on_validation_end(model* m) {}
   /** @brief Called when a model begins forward propagation. */
-  virtual void on_forward_prop_begin(model *m) {}
+  virtual void on_forward_prop_begin(model* m) {}
   /** @brief Called when a layer begins forward propagation. */
-  virtual void on_forward_prop_begin(model *m, Layer *l) {}
+  virtual void on_forward_prop_begin(model* m, Layer* l) {}
   /** @brief Called when a model ends forward propagation. */
-  virtual void on_forward_prop_end(model *m) {}
+  virtual void on_forward_prop_end(model* m) {}
   /** @brief Called when a layer ends forward propagation. */
-  virtual void on_forward_prop_end(model *m, Layer *l) {}
+  virtual void on_forward_prop_end(model* m, Layer* l) {}
   /** @brief Called when a model begins backward propagation. */
-  virtual void on_backward_prop_begin(model *m) {}
+  virtual void on_backward_prop_begin(model* m) {}
   /** @brief Called when a layer begins backward propagation. */
-  virtual void on_backward_prop_begin(model *m, Layer *l) {}
+  virtual void on_backward_prop_begin(model* m, Layer* l) {}
   /** @brief Called when a model ends backward propagation. */
-  virtual void on_backward_prop_end(model *m) {}
+  virtual void on_backward_prop_end(model* m) {}
   /** @brief Called when a layer ends backward propagation. */
-  virtual void on_backward_prop_end(model *m, Layer *l) {}
+  virtual void on_backward_prop_end(model* m, Layer* l) {}
   /** @brief Called when a model begins optimization. */
-  virtual void on_optimize_begin(model *m) {}
+  virtual void on_optimize_begin(model* m) {}
   /** @brief Called when weights begins optimization. */
-  virtual void on_optimize_begin(model *m, weights *w) {}
+  virtual void on_optimize_begin(model* m, weights* w) {}
   /** @brief Called when a model ends optimization. */
-  virtual void on_optimize_end(model *m) {}
+  virtual void on_optimize_end(model* m) {}
   /** @brief Called when weights ends optimization. */
-  virtual void on_optimize_end(model *m, weights *w) {}
+  virtual void on_optimize_end(model* m, weights* w) {}
 
   /** @brief Called at the beginning of a (mini-)batch evaluation
    *         (validation / testing).
    */
-  virtual void on_batch_evaluate_begin(model *m) {}
+  virtual void on_batch_evaluate_begin(model* m) {}
   /** @brief Called at the end of a (mini-)batch evaluation
    *         (validation / testing).
    */
-  virtual void on_batch_evaluate_end(model *m) {}
+  virtual void on_batch_evaluate_end(model* m) {}
   /** @brief Called when a model begins forward propagation for
    *         evaluation (validation / testing).
    */
-  virtual void on_evaluate_forward_prop_begin(model *m) {}
+  virtual void on_evaluate_forward_prop_begin(model* m) {}
   /** @brief Called when a layer begins forward propagation for
    *         evaluation (validation / testing).
    */
-  virtual void on_evaluate_forward_prop_begin(model *m, Layer *l) {}
+  virtual void on_evaluate_forward_prop_begin(model* m, Layer* l) {}
   /** @brief Called when a model ends forward propagation for
    *         evaluation (validation / testing).
    */
-  virtual void on_evaluate_forward_prop_end(model *m) {}
+  virtual void on_evaluate_forward_prop_end(model* m) {}
   /** @brief Called when a layer ends forward propagation for
    *         evaluation (validation / testing).
    */
-  virtual void on_evaluate_forward_prop_end(model *m, Layer *l) {}
+  virtual void on_evaluate_forward_prop_end(model* m, Layer* l) {}
 
   ///@}
   /** @name Queries */
@@ -195,46 +197,50 @@ public:
   ///@{
 
   /** @brief Store state to archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar);
+  template <class Archive>
+  void serialize(Archive& ar);
 
   ///@}
 
   /** @brief Build a standard directory hierarchy including trainer ID.
    */
   inline std::string get_multi_trainer_path(const model& m,
-                                            const std::string& root_dir) {
+                                            const std::string& root_dir)
+  {
     std::string dir = root_dir;
-    if (dir.empty()) { dir = "./"; }
-    if (dir.back() != '/') { dir += "/"; }
+    if (dir.empty()) {
+      dir = "./";
+    }
+    if (dir.back() != '/') {
+      dir += "/";
+    }
 
-    return build_string(dir,
-                        get_const_trainer().get_name(), '/');
+    return build_string(dir, get_const_trainer().get_name(), '/');
   }
 
   /** @brief Build a standard directory hierachy including trainer,
    * execution context, and model information (in that order).
    */
-  inline std::string get_multi_trainer_ec_model_path(const model& m,
-                                                     const std::string& root_dir) {
+  inline std::string
+  get_multi_trainer_ec_model_path(const model& m, const std::string& root_dir)
+  {
     std::string dir = get_multi_trainer_path(m, root_dir);
-    const auto& c = static_cast<const SGDExecutionContext&>(m.get_execution_context());
-    return build_string(dir,
-                        c.get_state_string(), '/',
-                        m.get_name(), '/');
+    const auto& c =
+      static_cast<const SGDExecutionContext&>(m.get_execution_context());
+    return build_string(dir, c.get_state_string(), '/', m.get_name(), '/');
   }
 
   /** @brief Build a standard directory hierachy including trainer,
    * model information in that order.
    */
   inline std::string get_multi_trainer_model_path(const model& m,
-                                                  const std::string& root_dir) {
+                                                  const std::string& root_dir)
+  {
     std::string dir = get_multi_trainer_path(m, root_dir);
-    return build_string(dir,
-                        m.get_name(), '/');
+    return build_string(dir, m.get_name(), '/');
   }
 
 protected:
-
   /** @brief Copy-assignment operator.
    *
    *  Performs a shallow (pointer) copy of the summarizer.
@@ -248,6 +254,6 @@ protected:
   int m_batch_interval;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED

@@ -25,22 +25,22 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
+#include "conduit/conduit_node.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 #include "lbann/comm.hpp"
-#include "lbann/utils/options.hpp"
+#include "lbann/data_store/data_store_conduit.hpp" //LBANN_DATA_ID_STR
+#include "lbann/utils/commify.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/jag_utils.hpp"
-#include "lbann/utils/commify.hpp"
+#include "lbann/utils/options.hpp"
 #include <cnpy.h>
 #include <numeric>
-#include "conduit/conduit_node.hpp"
-#include "lbann/data_store/data_store_conduit.hpp" //LBANN_DATA_ID_STR
-#include "conduit/conduit_relay_io_hdf5.hpp"
-
+#include <vector>
 
 using namespace lbann;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
 
@@ -71,7 +71,8 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
 
-    const std::string input_fn = arg_parser.get<std::string>(LBANN_OPTION_FILELIST);
+    const std::string input_fn =
+      arg_parser.get<std::string>(LBANN_OPTION_FILELIST);
 
     int rank = comm->get_rank_in_world();
     int np = comm->get_procs_in_world();
@@ -80,17 +81,17 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> filenames;
     read_filelist(comm.get(), input_fn, filenames);
 
-
     // get the shape vectors; note that shape[0] is the number of
     // samples (aka, frames)
     std::map<std::string, cnpy::NpyArray> aaa = cnpy::npz_load(filenames[0]);
     std::unordered_map<std::string, std::vector<size_t>> shapes;
-    for (const auto &t : aaa) {
-      const std::vector<size_t> &shape = t.second.shape;
+    for (const auto& t : aaa) {
+      const std::vector<size_t>& shape = t.second.shape;
       if (shape.size() == 1) {
         shapes[t.first].push_back(1);
-      } else {
-        for (size_t x=1; x<shape.size(); x++) {
+      }
+      else {
+        for (size_t x = 1; x < shape.size(); x++) {
           shapes[t.first].push_back(shape[x]);
         }
       }
@@ -98,38 +99,48 @@ int main(int argc, char *argv[]) {
 
     // get the number of elements in each field
     std::unordered_map<std::string, size_t> num_words;
-    for (const auto &t : shapes) {
-      num_words[t.first] = std::accumulate(t.second.begin(), t.second.end(), 1, std::multiplies<int>());
+    for (const auto& t : shapes) {
+      num_words[t.first] = std::accumulate(t.second.begin(),
+                                           t.second.end(),
+                                           1,
+                                           std::multiplies<int>());
     }
 
-    for (size_t j=rank; j<filenames.size(); j+=np) {
+    for (size_t j = rank; j < filenames.size(); j += np) {
       std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(filenames[j]);
       conduit::Node node;
       int num_samples = a["frames"].shape[0];
       for (int sample_index = 0; sample_index < num_samples; sample_index++) {
-        for (const auto &t : a) {
-          const std::string &name = t.first;
+        for (const auto& t : a) {
+          const std::string& name = t.first;
 
           if (name == "frames") {
-            //pass
+            // pass
           }
 
           else if (name == "bbs") {
-            float *data = a[name].data<float>();
-            size_t offset = sample_index*num_words["bbs"];
-            node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/data"].set(data + offset, num_words[name]);
-            node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/shape"].set(shapes[name]);
-            node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/size"].set(num_words[name]);
+            float* data = a[name].data<float>();
+            size_t offset = sample_index * num_words["bbs"];
+            node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/data"].set(
+              data + offset,
+              num_words[name]);
+            node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/shape"].set(
+              shapes[name]);
+            node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/size"].set(
+              num_words[name]);
           }
 
           else { // rots, states, tilts, density_sig1, probs
-            size_t offset = sample_index*num_words[name];
-            double *data = a[name].data<double>();
-            node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/data"].set(data + offset, num_words[name]);
-            node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/shape"].set(shapes[name]);
-            node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/size"].set(num_words[name]);
+            size_t offset = sample_index * num_words[name];
+            double* data = a[name].data<double>();
+            node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/data"].set(
+              data + offset,
+              num_words[name]);
+            node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/shape"].set(
+              shapes[name]);
+            node[LBANN_DATA_ID_STR(sample_index) + "/" + name + "/size"].set(
+              num_words[name]);
           }
-
         }
       }
 
@@ -143,11 +154,13 @@ int main(int argc, char *argv[]) {
       node.save(fn2);
       conduit::relay::io::hdf5_save(node, fn3);
     }
-
-  } catch (std::exception const &e) {
-    if (master) std::cerr << "caught exception: " << e.what() << "\n";
+  }
+  catch (std::exception const& e) {
+    if (master)
+      std::cerr << "caught exception: " << e.what() << "\n";
     return EXIT_FAILURE;
-  } catch (...) {
+  }
+  catch (...) {
     std::cerr << "unknown exception in main\n";
     return EXIT_FAILURE;
   }

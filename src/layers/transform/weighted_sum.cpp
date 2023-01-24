@@ -47,11 +47,11 @@ build_weighted_sum_layer_from_pbuf(lbann_comm* comm,
   return std::make_unique<LayerType>(comm, scaling_factors);
 }
 
-#define PROTO_DEVICE(T, Device) \
-  template class weighted_sum_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class weighted_sum_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+#define PROTO_DEVICE(T, Device)                                                \
+  template class weighted_sum_layer<T, data_layout::DATA_PARALLEL, Device>;    \
+  template class weighted_sum_layer<T, data_layout::MODEL_PARALLEL, Device>;   \
   LBANN_LAYER_BUILDER_ETI(weighted_sum, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann

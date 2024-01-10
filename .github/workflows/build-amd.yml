@@ -40,7 +40,7 @@ jobs:
         echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/amdgpu/${{ matrix.rocm }}/ubuntu jammy main" | sudo tee /etc/apt/sources.list.d/amdgpu.list
         echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/${{ matrix.rocm }} jammy main" | sudo tee --append /etc/apt/sources.list.d/rocm.list
         sudo apt update
-        sudo apt install rocm-hip-sdk
+        sudo apt install rocm-hip-libraries
 
     - name: Restore cached Spack-built dependencies
       id: cache-spack

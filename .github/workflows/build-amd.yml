@@ -43,6 +43,9 @@ jobs:
         sudo apt update
         sudo apt install rocm-hip-libraries
 
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+
     - name: Restore cached Spack-built dependencies
       id: cache-spack
       uses: actions/cache/restore@v3

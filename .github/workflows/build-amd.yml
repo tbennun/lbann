@@ -63,7 +63,7 @@ jobs:
         source spack/share/spack/setup-env.sh
         
         # Setup ROCm in spack
-        spack external find -p /opt/rocm --not-buildable -t rocm
+        spack external find -p /opt/rocm --not-buildable hip
         
         scripts/build_lbann.sh -d --dependencies-only -l ci -- +numpy +unit_tests +rocm amdgpu_target=gfx90a
 

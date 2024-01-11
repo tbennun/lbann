@@ -42,6 +42,12 @@ jobs:
         echo -e 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
         sudo apt update
         sudo apt install rocm-hip-sdk
+        sudo mkdir /opt/rocm/bin/hipccreal
+        sudo mv /opt/rocm/bin/hipcc /opt/rocm/bin/hipccreal/hipcc
+        cat > /opt/rocm/bin/hipcc <<EOF
+        #!/bin/sh
+        /opt/rocm/bin/hipccreal/hipcc -nogpuinc -nogpulib $*
+        EOF
 
     - name: Restore cached Spack-built dependencies
       id: cache-spack
@@ -58,7 +64,7 @@ jobs:
         source /usr/share/lmod/lmod/init/bash
         git clone -c feature.manyFiles=true https://github.com/spack/spack.git
         cd spack
-        git checkout 73858df14dc3f0e701814c84bb8bd6b72f80a806 # Use a tried and true version of Spack
+        git checkout 5351382501e280838d148f15dfd485f2a78667f2 # Use a tried and true version of Spack
         cd ..
         source spack/share/spack/setup-env.sh
         
@@ -69,7 +75,7 @@ jobs:
       if: steps.cache-spack.outputs.cache-hit != 'true'
       run: |
         # Setup ROCm in spack
-        spack external find -p /opt/rocm --not-buildable hip
+        spack external find -p /opt/rocm --not-buildable -t rocm
         
         scripts/build_lbann.sh -d --dependencies-only -l ci -- +numpy +unit_tests +rocm amdgpu_target=gfx90a
 

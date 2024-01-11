@@ -41,7 +41,7 @@ jobs:
           spack
         key: ${{ runner.os }}-cuda${{ matrix.cuda }}-spackdeps
 
-    - name: Build and install Spack
+    - name: Build and install LBANN dependencies
       if: steps.cache-spack.outputs.cache-hit != 'true'
       run: |
         source /usr/share/lmod/lmod/init/bash
@@ -50,10 +50,6 @@ jobs:
         git checkout 5351382501e280838d148f15dfd485f2a78667f2 # Use a tried and true version of Spack
         cd ..
         source spack/share/spack/setup-env.sh
-
-    - name: Build and install LBANN dependencies
-      if: steps.cache-spack.outputs.cache-hit != 'true'
-      run: |
         scripts/build_lbann.sh -d --dependencies-only -l ci -- +numpy +unit_tests +cuda
 
     - name: Cache Spack-built dependencies

@@ -68,8 +68,8 @@ jobs:
         cd ..
         source spack/share/spack/setup-env.sh
         
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
+    # - name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v3
 
     - name: Build and install LBANN dependencies
       if: steps.cache-spack.outputs.cache-hit != 'true'

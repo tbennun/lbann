@@ -28,7 +28,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libyaml-dev cmake lmod ninja-build
-        sudo apt-get install -y nvidia-cuda-toolkit=${{ matrix.cuda }}
+        sudo apt-get install -y nvidia-cuda-toolkit
         python -m pip install --upgrade pip
 
     - name: Restore cached Spack-built dependencies

@@ -50,7 +50,7 @@ jobs:
         git checkout 5351382501e280838d148f15dfd485f2a78667f2 # Use a tried and true version of Spack
         cd ..
         source spack/share/spack/setup-env.sh
-        scripts/build_lbann.sh -d --dependencies-only -l ci -- +numpy +unit_tests +cuda
+        scripts/build_lbann.sh -d --dependencies-only -l ci -- +numpy +unit_tests +cuda cuda_arch=70
 
     - name: Cache Spack-built dependencies
       id: cache-spack-save
@@ -65,4 +65,4 @@ jobs:
       run: |
         source /usr/share/lmod/lmod/init/bash
         source spack/share/spack/setup-env.sh
-        scripts/build_lbann.sh -r -l ci --ci -- +numpy +unit_tests +cuda
+        scripts/build_lbann.sh -r -l ci --ci -- +numpy +unit_tests +cuda cuda_arch=70

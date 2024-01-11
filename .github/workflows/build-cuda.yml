@@ -55,6 +55,8 @@ jobs:
         git checkout 73858df14dc3f0e701814c84bb8bd6b72f80a806 # Use a tried and true version of Spack
         cd ..
         source spack/share/spack/setup-env.sh
+        spack external find cuda
+        spack external find -p /usr/local/cuda cuda
         scripts/build_lbann.sh -d --dependencies-only -l ci -- +numpy +unit_tests +cuda cuda_arch=70
 
     - name: Cache Spack-built dependencies

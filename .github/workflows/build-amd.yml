@@ -44,7 +44,7 @@ jobs:
         sudo apt install rocm-hip-sdk
         sudo mkdir /opt/rocm/bin/hipccreal
         sudo mv /opt/rocm/bin/hipcc /opt/rocm/bin/hipccreal/hipcc
-        cat > /opt/rocm/bin/hipcc <<EOF
+        sudo cat > /opt/rocm/bin/hipcc <<EOF
         #!/bin/sh
         /opt/rocm/bin/hipccreal/hipcc -nogpuinc -nogpulib $*
         EOF

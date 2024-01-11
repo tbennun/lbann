@@ -1,4 +1,4 @@
-name: LBANN CPU
+name: LBANN GPU (CUDA)
 
 on:
   push:
@@ -9,11 +9,11 @@ on:
     branches: develop
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        compiler: [gcc]  # , clang
+        cuda: ['11.8']
 
     steps:
     - uses: actions/checkout@v4
@@ -39,18 +39,22 @@ jobs:
         path: |
           ~/.spack
           spack
-        key: ${{ runner.os }}-${{ matrix.compiler }}-spackdeps
+        key: ${{ runner.os }}-cuda${{ matrix.cuda }}-spackdeps
 
-    - name: Build and install LBANN dependencies
+    - name: Build and install Spack
       if: steps.cache-spack.outputs.cache-hit != 'true'
       run: |
         source /usr/share/lmod/lmod/init/bash
         git clone -c feature.manyFiles=true https://github.com/spack/spack.git
         cd spack
-        git checkout 73858df14dc3f0e701814c84bb8bd6b72f80a806 # Use a tried and true version of Spack
+        git checkout 5351382501e280838d148f15dfd485f2a78667f2 # Use a tried and true version of Spack
         cd ..
         source spack/share/spack/setup-env.sh
-        scripts/build_lbann.sh -d --dependencies-only -l ci -- +numpy +unit_tests %${{ matrix.compiler }}
+
+    - name: Build and install LBANN dependencies
+      if: steps.cache-spack.outputs.cache-hit != 'true'
+      run: |
+        scripts/build_lbann.sh -d --dependencies-only -l ci -- +numpy +unit_tests +cuda
 
     - name: Cache Spack-built dependencies
       id: cache-spack-save
@@ -59,16 +63,10 @@ jobs:
         path: |
           ~/.spack
           spack
-        key: ${{ runner.os }}-${{ matrix.compiler }}-spackdeps
+        key: ${{ runner.os }}-cuda${{ matrix.cuda }}-spackdeps
 
     - name: Build LBANN
       run: |
         source /usr/share/lmod/lmod/init/bash
         source spack/share/spack/setup-env.sh
-        scripts/build_lbann.sh -r -l ci --ci -- +numpy +unit_tests %${{ matrix.compiler }}
-
-    - name: Test Catch2
-      run: |
-        cd builds/*/build
-        ./unit_test/helpers_tests
-        ./unit_test/seq-catch-tests
+        scripts/build_lbann.sh -r -l ci --ci -- +numpy +unit_tests +cuda

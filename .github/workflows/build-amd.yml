@@ -1,0 +1,90 @@
+name: LBANN GPU (AMD)
+
+on:
+  push:
+    branches: develop
+  pull_request:
+    branches: develop
+  merge_group:
+    branches: develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rocm: ['5.7.1']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libyaml-dev cmake lmod ninja-build
+        sudo apt-get install -y libblas-dev libopenblas-dev liblapacke-dev
+        sudo apt-get install -y openmpi-bin openmpi-common libopenmpi-dev
+        python -m pip install --upgrade pip
+
+    - name: Install ROCm ${{ matrix.rocm }}
+      run: |
+        # Instructions from https://rocm.docs.amd.com/en/docs-5.7.1/deploy/linux/os-native/install.html
+        sudo mkdir --parents --mode=0755 /etc/apt/keyrings
+        wget https://repo.radeon.com/rocm/rocm.gpg.key -O - | gpg --dearmor | sudo tee /etc/apt/keyrings/rocm.gpg > /dev/null
+        echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/amdgpu/${{ matrix.rocm }}/ubuntu jammy main" | sudo tee /etc/apt/sources.list.d/amdgpu.list
+        echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/${{ matrix.rocm }} jammy main" | sudo tee --append /etc/apt/sources.list.d/rocm.list
+        echo -e 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
+        sudo apt update
+        sudo apt install rocm-hip-sdk
+
+    - name: Restore cached Spack-built dependencies
+      id: cache-spack
+      uses: actions/cache/restore@v3
+      with:
+        path: |
+          ~/.spack
+          spack
+        key: ${{ runner.os }}-rocm${{ matrix.rocm }}-spackdeps
+
+    - name: Build and install Spack
+      if: steps.cache-spack.outputs.cache-hit != 'true'
+      run: |
+        source /usr/share/lmod/lmod/init/bash
+        git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+        cd spack
+        git checkout 5351382501e280838d148f15dfd485f2a78667f2 # Use a tried and true version of Spack
+        cd ..
+        source spack/share/spack/setup-env.sh
+        
+    # - name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v3
+
+    - name: Build and install LBANN dependencies
+      if: steps.cache-spack.outputs.cache-hit != 'true'
+      run: |
+        source spack/share/spack/setup-env.sh
+        # Setup ROCm in spack
+        spack external find -p /opt/rocm --not-buildable -t rocm
+        
+        scripts/build_lbann.sh -d --dependencies-only -l ci -- +numpy +unit_tests +rocm amdgpu_target=gfx90a %rocmcc
+
+    - name: Cache Spack-built dependencies
+      id: cache-spack-save
+      uses: actions/cache/save@v3
+      with:
+        path: |
+          ~/.spack
+          spack
+        key: ${{ runner.os }}-rocm${{ matrix.rocm }}-spackdeps
+
+    - name: Build LBANN
+      run: |
+        source /usr/share/lmod/lmod/init/bash
+        source spack/share/spack/setup-env.sh
+        scripts/build_lbann.sh -r -l ci --ci -- +numpy +unit_tests +rocm amdgpu_target=gfx90a %rocmcc

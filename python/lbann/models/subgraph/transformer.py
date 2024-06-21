@@ -16,7 +16,7 @@ from typing import Optional
 import lbann
 import lbann.modules
 from lbann.modules import attention_allsubgraph as attn
-from lbann.models.transformer import LayerNorm
+from lbann.modules.transformer.normalization import LayerNorm
 
 
 class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):

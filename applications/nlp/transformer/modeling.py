@@ -3,8 +3,9 @@ from enum import Enum, auto
 import lbann
 import math
 from typing import Tuple
-from lbann.models.transformer import LayerNorm, Transformer
+from lbann.models.transformer import Transformer
 from lbann.modules.transformer import encoding
+from lbann.modules.transformer.normalization import LayerNorm
 import parallelism
 
 

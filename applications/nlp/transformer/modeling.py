@@ -71,7 +71,7 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
     encoder_input, decoder_input, posenc = _add_input_encoding(
         encoder_input, decoder_input, petype, args.embed_dim,
         args.input_dropout, sequence_length, sequence_length - 1,
-        args.num_attention_heads)
+        args.num_attention_heads, args.rope_ratio)
 
     # Add encoder-decoder transformer model
     transformer = Transformer(hidden_size=args.embed_dim,
@@ -376,7 +376,8 @@ def create_masked_language_modeling_transformer(
 def _add_input_encoding(
     encoder_input: lbann.Layer, decoder_input: lbann.Layer,
     encoding_kind: InputEncoding, embed_dim: int, input_dropout: float,
-    encoder_sequence_length: int, decoder_sequence_length: int, num_heads: int
+    encoder_sequence_length: int, decoder_sequence_length: int, num_heads: int,
+    rope_ratio: float
 ) -> Tuple[lbann.Layer, lbann.Layer, encoding.SequenceEncoding]:
     if encoding_kind == InputEncoding.NONE:
         # Do nothing
@@ -395,7 +396,7 @@ def _add_input_encoding(
         # Optimize by not computing embeddings twice
         kwargs = dict(learned_encoding=positional_encoder.compute_embeddings())
     elif encoding_kind == InputEncoding.ROPE:
-        freq_dim = embed_dim // num_heads
+        freq_dim = (embed_dim // num_heads) * rope_ratio
         max_seqlen = max(encoder_sequence_length, decoder_sequence_length)
         positional_encoder = encoding.RotaryPositionalEmbedding(
             freq_dim, max_seqlen, num_heads)
@@ -518,3 +519,7 @@ def add_transformer_architecture_arguments(args: argparse.Namespace):
                       help='The type of positional encoding to use '
                       '(default: learned)',
                       choices=[s.name.lower() for s in InputEncoding])
+    args.add_argument('--rope-ratio',
+                      type=float,
+                      default=1.0,
+                      help='Rotary Positional Embedding ratio (default: 1)')

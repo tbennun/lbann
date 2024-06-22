@@ -9,12 +9,13 @@ class LayerNorm(Module):
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, normalized_shape, name=None, builtin=True):
+    def __init__(self, normalized_shape, name=None, builtin=True, eps=None):
         super().__init__()
         LayerNorm.global_count += 1
         self.normalized_shape = make_iterable(normalized_shape)
         self.name = (name if name else f'layernorm{LayerNorm.global_count}')
         self.builtin = builtin
+        self.epsilon = eps
 
         # Initialize weights
         self.weight = lbann.Weights(
@@ -34,10 +35,11 @@ class LayerNorm(Module):
                                    start_dim=-1,
                                    name=self.name,
                                    weights=[self.weight, self.bias],
+                                   epsilon=self.epsilon,
                                    **extra_kwargs)
 
         # Normalization
-        x = lbann.InstanceNorm(x, **extra_kwargs)
+        x = lbann.InstanceNorm(x, epsilon=self.epsilon, **extra_kwargs)
 
         # Affine transform
         s = lbann.WeightsLayer(

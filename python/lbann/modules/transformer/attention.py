@@ -1,6 +1,6 @@
 """Neural network modules for multi-head attention."""
 import math
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional
 import lbann
 from ..base import Module
 from lbann.modules.transformer.encoding import SequenceEncoding
@@ -31,6 +31,17 @@ class MultiheadAttention(Module):
             probability matrix before softmax. If None, does not apply.
         positional_encoding (SequenceEncoding): An optional positional encoding
             object that may apply on each input.
+        weight_initializer (function): An optional function to control weight
+                                       initialization. If not given,
+                                       GlorotNormalInitializer will be used.
+        bias_initializer (function): An optional function to control bias
+                                     initialization in fully connected layers.
+                                     If not given, a constant 0 initialization
+                                     will be used.
+        out_weight_initializer (function): An optional function to control
+                                           output weight initialization. If not
+                                           given, weight_initializer is used.
+        attn_bias (bool): Whether attention (QKV) weights will use bias.
         name (str): Default name is in the form
             'multiheadattention<index>'.
 
@@ -47,6 +58,10 @@ class MultiheadAttention(Module):
                  subgraph_branches: int = 0,
                  bias: Optional[lbann.Layer] = None,
                  positional_encoding: Optional[SequenceEncoding] = None,
+                 weight_initializer: Callable[[], lbann.Initializer] = None,
+                 bias_initializer: Callable[[], lbann.Initializer] = None,
+                 out_weight_initializer: Callable[[], lbann.Initializer] = None,
+                 attn_bias: bool = True,
                  name: str = None):
         super().__init__()
         MultiheadAttention.global_count += 1
@@ -58,6 +73,11 @@ class MultiheadAttention(Module):
         self.dropout = dropout
         self.bias = bias
         self.positional_encoding = positional_encoding
+        weight_initializer = weight_initializer or lbann.GlorotNormalInitializer
+        bias_initializer = bias_initializer or (
+            lambda: lbann.ConstantInitializer(value=0))
+        out_weight_initializer = out_weight_initializer or weight_initializer
+        self.attn_bias = attn_bias
 
         # Self-attention is a special case in which we can stack
         # query/key/value weights
@@ -81,35 +101,35 @@ class MultiheadAttention(Module):
         # Weights for fully-connected layers
         if self_attention:
             self.qkv_weights = [
-                lbann.Weights(initializer=lbann.GlorotNormalInitializer(),
+                lbann.Weights(initializer=weight_initializer(),
                               name=f'{self.name}_qkv_matrix'),
-                lbann.Weights(initializer=lbann.ConstantInitializer(value=0),
+                lbann.Weights(initializer=bias_initializer(),
                               name=f'{self.name}_qkv_bias'),
             ]
         else:
             self.query_weights = [
-                lbann.Weights(initializer=lbann.GlorotNormalInitializer(),
+                lbann.Weights(initializer=weight_initializer(),
                               name=f'{self.name}_query_matrix'),
-                lbann.Weights(initializer=lbann.ConstantInitializer(value=0),
+                lbann.Weights(initializer=bias_initializer(),
                               name=f'{self.name}_query_bias'),
             ]
             self.key_weights = [
-                lbann.Weights(initializer=lbann.GlorotNormalInitializer(),
+                lbann.Weights(initializer=weight_initializer(),
                               name=f'{self.name}_key_matrix'),
-                lbann.Weights(initializer=lbann.ConstantInitializer(value=0),
+                lbann.Weights(initializer=bias_initializer(),
                               name=f'{self.name}_key_bias'),
             ]
             self.value_weights = [
-                lbann.Weights(initializer=lbann.GlorotNormalInitializer(),
+                lbann.Weights(initializer=weight_initializer(),
                               name=f'{self.name}_value_matrix'),
-                lbann.Weights(initializer=lbann.ConstantInitializer(value=0),
+                lbann.Weights(initializer=bias_initializer(),
                               name=f'{self.name}_value_bias'),
             ]
 
         self.output_weights = [
-            lbann.Weights(initializer=lbann.GlorotNormalInitializer(),
+            lbann.Weights(initializer=out_weight_initializer(),
                           name=f'{self.name}_output_matrix'),
-            lbann.Weights(initializer=lbann.ConstantInitializer(value=0),
+            lbann.Weights(initializer=bias_initializer(),
                           name=f'{self.name}_output_bias'),
         ]
 
@@ -152,7 +172,7 @@ class MultiheadAttention(Module):
                 weights=self.qkv_weights,
                 output_channel_dims=[self.embed_dim * 3],
                 name=f'{name}_qkv_fc',
-                bias=True,
+                bias=self.attn_bias,
                 transpose=False,
                 **extra_kwargs)
 
@@ -173,6 +193,7 @@ class MultiheadAttention(Module):
                 queries,
                 weights=self.query_weights,
                 output_channel_dims=[self.embed_dim],
+                bias=self.attn_bias,
                 name=f'{name}_queries_fc',
                 **extra_kwargs,
             )
@@ -180,6 +201,7 @@ class MultiheadAttention(Module):
                 keys,
                 weights=self.key_weights,
                 output_channel_dims=[self.embed_dim],
+                bias=self.attn_bias,
                 name=f'{name}_keys_fc',
                 **extra_kwargs,
             )
@@ -187,6 +209,7 @@ class MultiheadAttention(Module):
                 values,
                 weights=self.value_weights,
                 output_channel_dims=[self.embed_dim],
+                bias=self.attn_bias,
                 name=f'{name}_values_fc',
                 **extra_kwargs,
             )

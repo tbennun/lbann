@@ -2,8 +2,9 @@ import argparse
 from enum import Enum, auto
 import lbann
 import math
-from typing import Tuple
+from typing import Optional, Tuple
 from lbann.models.transformer import Transformer
+import lbann.modules
 from lbann.modules.transformer import encoding
 from lbann.modules.transformer.normalization import LayerNorm
 import parallelism
@@ -130,11 +131,18 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
     return result
 
 
-def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
-                                         num_decoders: int, num_heads: int,
-                                         dropout: float, input_dropout: float,
-                                         attn_dropout: float, num_epochs: int,
-                                         args: argparse.Namespace):
+def create_causal_lm_decoder_transformer(
+        dataset,
+        embed_dim: int,
+        num_decoders: int,
+        num_heads: int,
+        dropout: float,
+        input_dropout: float,
+        attn_dropout: float,
+        num_epochs: int,
+        args: argparse.Namespace,
+        transformer: Optional[lbann.modules.Module] = None,
+        classifier_dropout: float = 0.0):
     """
     Creates a GPT-style decoder-only transformer for causal language modeling
     tasks (e.g., predict next token).
@@ -170,19 +178,24 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
     # Apply input encoding
     _, decoder_input, posenc = _add_input_encoding(None, decoder_input, petype,
                                                    embed_dim, input_dropout, 0,
-                                                   sequence_length, num_heads)
+                                                   sequence_length, num_heads,
+                                                   args.rope_ratio)
 
     # Add a GPT-style (decoder-only) transformer model
-    transformer = Transformer(hidden_size=embed_dim,
-                              num_heads=num_heads,
-                              dropout=dropout,
-                              attn_dropout=attn_dropout,
-                              num_encoder_layers=0,
-                              num_decoder_layers=num_decoders,
-                              pre_layernorm=True,
-                              activation=lbann.Gelu,
-                              positional_encoding=posenc,
-                              name='transformer')
+    if transformer is None:
+        use_transformer_params = True
+        transformer = Transformer(hidden_size=embed_dim,
+                                  num_heads=num_heads,
+                                  dropout=dropout,
+                                  attn_dropout=attn_dropout,
+                                  num_encoder_layers=0,
+                                  num_decoder_layers=num_decoders,
+                                  pre_layernorm=True,
+                                  activation=lbann.Gelu,
+                                  positional_encoding=posenc,
+                                  name='transformer')
+    else:
+        use_transformer_params = False
 
     # Apply parallelism techniques
     transformer, extra_model_kwargs = parallelism.apply_subgraph_parallelism(
@@ -192,11 +205,23 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
     parallelism.apply_layer_parallelism(transformer, args)
 
     # Run through transformer with the same sequence
-    result = transformer(decoder_input, decoder_input, sequence_length)
+    if use_transformer_params:
+        # Encoder-decoder parameters
+        result = transformer(decoder_input, decoder_input, sequence_length)
+    else:
+        # Decoder-only parameters
+        # TODO: Feed in attention mask
+        result = transformer(decoder_input, None)
 
     # Apply layer normalization on the outputs
     norm_final = LayerNorm(embed_dim, name=f'final_layernorm')
     result = norm_final(result)
+
+    # Apply classifier dropout, if exists
+    if classifier_dropout > 0:
+        result = lbann.Dropout(result,
+                               keep_prob=1 - classifier_dropout,
+                               name=f'classifier_dropout')
 
     # Apply language modeling head on results
     lm_head = lbann.ChannelwiseFullyConnected(result,

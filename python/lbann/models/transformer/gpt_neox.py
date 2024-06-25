@@ -33,6 +33,7 @@ class GPTNeoX(lbann.modules.Module):
         parallel_mlp: bool = True,
         attention_bias: bool = True,
         # Dropout
+        input_dropout: float = 0.0,
         dropout: float = 0.0,
         attn_dropout: float = 0.0,
         # Positional encoding
@@ -44,8 +45,11 @@ class GPTNeoX(lbann.modules.Module):
         self.hidden_size = hidden_size
         self.num_heads = num_heads
         self.intermediate_size = intermediate_size
-        self.input_dropout = dropout
+        self.input_dropout = input_dropout
         self.sequence_length = sequence_length
+        self.separate_heads = False
+        self._subsequent_mask_cache = {}
+        self.name = 'neox'
 
         # Initialization (from paper)
         small_init = math.sqrt(2 / (5 * hidden_size))
@@ -67,7 +71,7 @@ class GPTNeoX(lbann.modules.Module):
 
         # Embedding weights
         self.embedding_weights = lbann.Weights(
-            name='embeddings',
+            name=f'{self.name}_embeddings',
             initializer=lbann.NormalInitializer(standard_deviation=small_init),
         )
 

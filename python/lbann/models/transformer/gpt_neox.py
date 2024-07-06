@@ -135,7 +135,7 @@ class GPTNeoX(lbann.modules.Module):
 class GPTNeoXLayer(lbann.modules.Module):
     """
     GPT-NeoX block.
-    
+
     Consists of either a parallel (default) or sequential MHA/MLP setup.
     """
 

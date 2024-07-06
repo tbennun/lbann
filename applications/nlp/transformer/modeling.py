@@ -261,9 +261,17 @@ def create_causal_lm_decoder_transformer(
 
 
 def create_masked_language_modeling_transformer(
-        dataset, embed_dim: int, num_encoders: int, num_decoders: int, num_heads: int,
-        dropout: float, input_dropout: float, attn_dropout: float,
-        num_epochs: int, args: argparse.Namespace):
+        dataset,
+        embed_dim: int,
+        num_encoders: int,
+        num_decoders: int,
+        num_heads: int,
+        dropout: float,
+        input_dropout: float,
+        attn_dropout: float,
+        num_epochs: int,
+        args: argparse.Namespace,
+        transformer: Optional[lbann.modules.Module] = None):
     """
     Creates a flexible transformer for masked language modeling tasks.
     """
@@ -280,13 +288,14 @@ def create_masked_language_modeling_transformer(
     # Input is a sequences of token IDs followed by a mask sequence
     all_inputs = lbann.Input(data_field='samples')
     slice_points = [
-            0,
-            sequence_length,      # Original sequence
-            2 * sequence_length,  # Mask
+        0,
+        sequence_length,  # Original sequence
+        2 * sequence_length,  # Mask
     ]
     if args.attn_mask:
         # Attention matrix mask
-        slice_points.append(2 * sequence_length + sequence_length * sequence_length)
+        slice_points.append(2 * sequence_length +
+                            sequence_length * sequence_length)
 
     slc = lbann.Slice(
         all_inputs,
@@ -325,17 +334,20 @@ def create_masked_language_modeling_transformer(
                                                    embed_dim, input_dropout, 0,
                                                    sequence_length, num_heads)
 
-    # Add a GPT-style (decoder-only) transformer model
-    transformer = Transformer(hidden_size=embed_dim,
-                              num_heads=num_heads,
-                              dropout=dropout,
-                              attn_dropout=attn_dropout,
-                              num_encoder_layers=num_encoders,
-                              num_decoder_layers=num_decoders,
-                              pre_layernorm=True,
-                              activation=lbann.Gelu,
-                              positional_encoding=posenc,
-                              name='transformer')
+    if transformer is None:
+        use_transformer_params = True
+        transformer = Transformer(hidden_size=embed_dim,
+                                  num_heads=num_heads,
+                                  dropout=dropout,
+                                  attn_dropout=attn_dropout,
+                                  num_encoder_layers=num_encoders,
+                                  num_decoder_layers=num_decoders,
+                                  pre_layernorm=True,
+                                  activation=lbann.Gelu,
+                                  positional_encoding=posenc,
+                                  name='transformer')
+    else:
+        use_transformer_params = False
 
     # Tessellate attention pattern for all heads (note that this is a memory issue)
     if attn is not None and not transformer.separate_heads:
@@ -352,10 +364,15 @@ def create_masked_language_modeling_transformer(
     parallelism.apply_layer_parallelism(transformer, args)
 
     # Run through transformer with the same sequence
-    result = transformer(decoder_input,
-                         decoder_input,
-                         sequence_length,
-                         target_mask=attn)
+    if use_transformer_params:
+        # Encoder-decoder parameters
+        result = transformer(decoder_input,
+                             decoder_input,
+                             sequence_length,
+                             target_mask=attn)
+    else:
+        # Decoder-only parameters
+        result = transformer(decoder_input, attn)
 
     # Apply layer normalization on the outputs
     norm_final = LayerNorm(embed_dim, name=f'final_layernorm')

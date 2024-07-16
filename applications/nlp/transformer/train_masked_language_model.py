@@ -43,7 +43,7 @@ class GPTConfig:
 
 
 SIZES = {
-    'small': GPTConfig(12, 768, 12, 64, 6e-4),
+    'small': GPTConfig(12, 768, 12, 64, 0.00005),
     'medium': GPTConfig(24, 1024, 16, 64, 3e-4),
     'large': GPTConfig(24, 1536, 16, 96, 2.5e-4),
     'xl': GPTConfig(24, 2048, 24, 128, 2e-4),
@@ -105,6 +105,11 @@ def main():
         help="Use dataset fraction to determine hyperparameter schedule"
         " (default: False)")
     parser.add_argument(
+        "--warmup-steps",
+        type=int,
+        default=-1,
+        help="If set, sets the learning rate warmup steps manually")
+    parser.add_argument(
         '--positional-encoding',
         type=str,
         default='learned',
@@ -118,17 +123,16 @@ def main():
 
     # Masking properties
     parser.add_argument(
-        "--encoder",
+        "--decoder",
         action='store_true',
         default=False,
-        help="Use encoders instead of decoders (disables causal attention)"
+        help="Use decoders instead of encoders (enables causal attention)"
         " (default: False)")
-    parser.add_argument(
-        "--attn-mask",
-        action='store_true',
-        default=False,
-        help="Use custom attention mask (incompatible with --encoder)"
-        " (default: False)")
+    parser.add_argument("--attn-mask",
+                        action='store_true',
+                        default=False,
+                        help="Use custom attention mask (requires --decoder)"
+                        " (default: False)")
     parser.add_argument(
         "--predict-sequence",
         action='store_true',
@@ -186,8 +190,8 @@ def main():
     if not args.dataset and (not args.train_set or not args.vocab_file):
         raise ValueError(
             'The following arguments are required: --vocab-file, --train-set')
-    if args.attn_mask and args.encoder:
-        raise ValueError('--attn-mask is incompatible with --encoder')
+    if args.attn_mask and not args.decoder:
+        raise ValueError('--attn-mask requires --decoder')
 
     # Load dataset
     val_dataset = None
@@ -221,8 +225,8 @@ def main():
     model: lbann.Model = modeling.create_masked_language_modeling_transformer(
         dataset,
         embed_dim=chosen_config.head_dim * chosen_config.num_heads,
-        num_encoders=0 if not args.encoder else chosen_config.layers,
-        num_decoders=0 if args.encoder else chosen_config.layers,
+        num_encoders=0 if args.decoder else chosen_config.layers,
+        num_decoders=0 if not args.decoder else chosen_config.layers,
         num_heads=chosen_config.num_heads,
         dropout=args.dropout,
         input_dropout=args.input_dropout,
@@ -244,6 +248,11 @@ def main():
     total_steps = math.ceil(sched_mult * dataset.num_train_samples() /
                             args.mini_batch_size)
 
+    if args.warmup_steps >= 0:
+        warmup_steps = args.warmup_steps
+    else:
+        warmup_steps = int(warmup_ratio * total_steps)
+
     train_script: BatchScript = trainer.construct_training_task(
         model,
         args,
@@ -255,8 +264,8 @@ def main():
         clip_gradient=args.grad_clip,
         lr_decay='cosine',
         lr_decay_steps=int(lr_decay_ratio * total_steps),
-        end_learning_rate=chosen_config.lr / 10,
-        warmup_steps=int(warmup_ratio * total_steps),
+        end_learning_rate=0,  # chosen_config.lr / 10,
+        warmup_steps=warmup_steps,
         adamw_decay=0.1,
         dataset=args.dataset or dataset,
         validation_dataset=val_dataset,

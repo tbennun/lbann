@@ -527,16 +527,9 @@ def _add_mlm_loss(preds, input_tokens, sequence_length, vocab_size, pad_index):
     # Flatten labels
     flat_labels = lbann.Reshape(input_tokens, dims=[1, sequence_length])
 
-    # Filter out output predictions that are in padding from cross-entropy by
-    # using values that will never contribute to the cross-entropy loss
-    flat_labels = lbann.Select(flat_labels,
-                               lbann.Identity(flat_labels),
-                               value=pad_index,
-                               if_true=(vocab_size + 1))
-
-    # Compute mean cross-entropy over the sequence
+    # Compute sum cross-entropy over the sequence
     ce = lbann.CrossEntropy(preds, flat_labels, use_labels=True)
-    return lbann.Scale(ce, constant=1 / sequence_length)
+    return ce # lbann.Scale(ce, constant=1 / sequence_length)
 
 
 # Command-line arguments

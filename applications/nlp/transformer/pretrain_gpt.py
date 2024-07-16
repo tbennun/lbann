@@ -106,6 +106,10 @@ def main():
         help='The type of positional encoding to use '
         '(default: learned)',
         choices=[s.name.lower() for s in modeling.InputEncoding])
+    parser.add_argument('--rope-ratio',
+                        type=float,
+                        default=1.0,
+                        help='Rotary Positional Embedding ratio (default: 1)')
 
     parser.set_defaults(progress=True, num_epochs=1)
     args = parser.parse_args()

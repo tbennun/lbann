@@ -111,6 +111,10 @@ def main():
         help='The type of positional encoding to use '
         '(default: learned)',
         choices=[s.name.lower() for s in modeling.InputEncoding])
+    parser.add_argument('--rope-ratio',
+                        type=float,
+                        default=1.0,
+                        help='Rotary Positional Embedding ratio (default: 1)')
 
     # Masking properties
     parser.add_argument(
@@ -142,7 +146,8 @@ def main():
     parser.add_argument(
         "--train-set",
         action="append",
-        help="Path to training dataset file or files (newline-separated text file)")
+        help=
+        "Path to training dataset file or files (newline-separated text file)")
     parser.add_argument("--data-format",
                         type=str,
                         help="Dataset format",
@@ -157,7 +162,9 @@ def main():
     parser.add_argument(
         "--val-set",
         action="append",
-        help="Path to validation dataset file or files (newline-separated text file)")
+        help=
+        "Path to validation dataset file or files (newline-separated text file)"
+    )
     parser.add_argument(
         "--dataset-prefetch-factor",
         type=int,

@@ -236,6 +236,12 @@ def make_batch_script(model: lbann.Model,
                 directory=os.path.join(work_dir, 'weights'),
                 epoch_interval=1,
             ))
+    if args.checkpoint_every > 0:
+        trainer.callbacks.append(
+            lbann.CallbackCheckpoint(
+                checkpoint_dir=os.path.join(work_dir, 'checkpoint'),
+                checkpoint_steps=args.checkpoint_every,
+            ))
 
     if args.validate_every > 0:
         model.callbacks.append(
@@ -316,6 +322,11 @@ def add_training_arguments(parser: argparse.ArgumentParser):
         default=False,
         help="Save prototext experiment file instead of protobin (slower but "
         "debuggable) (default: false)")
+    parser.add_argument(
+        '--checkpoint-every',
+        default=0,
+        type=int,
+        help='Save checkpoint after every N steps (default: 0)')
     parser.add_argument("--validate-every",
                         type=int,
                         default=100,

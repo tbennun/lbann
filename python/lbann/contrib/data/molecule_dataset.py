@@ -53,7 +53,8 @@ class TextDatasetWithOffsets(Dataset):
         self.files = file_or_files
 
         self.offsets = [
-            np.memmap(f + '.offsets', dtype=np.uint64) for f in file_or_files
+            np.memmap(f + '.offsets', dtype=np.uint64, mode='r')
+            for f in file_or_files
         ]
         self.samples = [o.shape[0] for o in self.offsets]
         self.cs = np.cumsum(np.array(self.samples, dtype=np.uint64),
@@ -62,16 +63,19 @@ class TextDatasetWithOffsets(Dataset):
 
         # Clean memmapped files so that the object can be pickled
         self.offsets = None
-        #self.files = [np.memmap(f, dtype=np.uint8) for f in file_or_files]
+        #self.files = [np.memmap(f, dtype=np.uint8, mode='r') for f in file_or_files]
 
     def _lazy_reload(self):
         if self.offsets is not None:
             return
 
         self.offsets = [
-            np.memmap(f + '.offsets', dtype=np.uint64) for f in self.files
+            np.memmap(f + '.offsets', dtype=np.uint64, mode='r')
+            for f in self.files
         ]
-        self.files = [np.memmap(f, dtype=np.uint8) for f in self.files]
+        self.files = [
+            np.memmap(f, dtype=np.uint8, mode='r') for f in self.files
+        ]
 
     def __len__(self):
         return self.total_samples
@@ -166,11 +170,11 @@ class ChemTextDataset(LBANNDataset):
 
         if self.attn_mask:
             samp = Sample(
-                concat(self.trim_and_pad(ids, True), self.make_mask(),
+                concat(self.trim_and_pad(ids, True), self.make_mask(ids),
                        self.make_attn_mask()))
         else:
             samp = Sample(
-                concat(self.trim_and_pad(ids, True), self.make_mask()))
+                concat(self.trim_and_pad(ids, True), self.make_mask(ids)))
         return samp
 
     def get_sample_dims(self):
@@ -179,12 +183,20 @@ class ChemTextDataset(LBANNDataset):
         return SampleDims(
             (self.sequence_length + self.sequence_length + amask, ))
 
-    def make_mask(self, random: bool = True) -> np.ndarray:
+    def make_mask(self, sample, random: bool = True) -> np.ndarray:
         # 0 = masked, 1 = not masked
         if random:
-            return np.random.binomial(1,
-                                      1 - self.mlm_prob,
-                                      size=self.sequence_length)
+            # Never mask padding or special tokens
+            result = np.ones((self.sequence_length, ))
+            sample_mask_without_bos_eos = np.random.binomial(
+                1,
+                1 - self.mlm_prob,
+                size=min(len(sample), self.sequence_length) - 2)
+            if len(sample) < self.sequence_length:
+                result[-len(sample) + 1:-1] = sample_mask_without_bos_eos
+            else:
+                result[1:-1] = sample_mask_without_bos_eos
+            return result
 
         # All masked:
         #return np.full((self.sequence_length, ), 0)

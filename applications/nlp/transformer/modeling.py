@@ -272,7 +272,8 @@ def create_masked_language_modeling_transformer(
         num_epochs: int,
         args: argparse.Namespace,
         transformer: Optional[lbann.modules.Module] = None,
-        tie_embeddings: bool = True):
+        tie_embeddings: bool = True,
+        mask_only: bool = True):
     """
     Creates a flexible transformer for masked language modeling tasks.
     """
@@ -323,6 +324,10 @@ def create_masked_language_modeling_transformer(
                                 value=1,
                                 if_false=dataset.mask_index)
 
+    # Deactivate all unmasked labels, predicting the masked tokens only
+    if mask_only:
+        input_tokens = lbann.Select(mask, input_tokens, value=1, if_true=-100)
+
     # Get sequences of embedding vectors
     embeddings = lbann.Embedding(
         masked_input,
@@ -341,7 +346,8 @@ def create_masked_language_modeling_transformer(
     # Apply input encoding
     _, decoder_input, posenc = _add_input_encoding(None, decoder_input, petype,
                                                    embed_dim, input_dropout, 0,
-                                                   sequence_length, num_heads)
+                                                   sequence_length, num_heads,
+                                                   args.rope_ratio)
 
     if transformer is None:
         use_transformer_params = True
@@ -447,7 +453,7 @@ def _add_input_encoding(
         # Optimize by not computing embeddings twice
         kwargs = dict(learned_encoding=positional_encoder.compute_embeddings())
     elif encoding_kind == InputEncoding.ROPE:
-        freq_dim = (embed_dim // num_heads) * rope_ratio
+        freq_dim = int((embed_dim // num_heads) * rope_ratio)
         max_seqlen = max(encoder_sequence_length, decoder_sequence_length)
         positional_encoder = encoding.RotaryPositionalEmbedding(
             freq_dim, max_seqlen, num_heads)

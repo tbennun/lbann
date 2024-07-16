@@ -129,6 +129,11 @@ def main():
         default=False,
         help="Use custom attention mask (incompatible with --encoder)"
         " (default: False)")
+    parser.add_argument(
+        "--predict-sequence",
+        action='store_true',
+        default=False,
+        help="Predict entire sequence (default predicts only masked values)")
     parser.add_argument("--mlm-fraction",
                         type=float,
                         default=0.15,
@@ -224,6 +229,7 @@ def main():
         attn_dropout=args.attn_dropout,
         num_epochs=args.num_epochs,
         args=args,
+        mask_only=not args.predict_sequence,
     )
     lbann.util.amp.enable_amp(model, args)
 

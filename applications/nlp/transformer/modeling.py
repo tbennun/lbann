@@ -271,7 +271,8 @@ def create_masked_language_modeling_transformer(
         attn_dropout: float,
         num_epochs: int,
         args: argparse.Namespace,
-        transformer: Optional[lbann.modules.Module] = None):
+        transformer: Optional[lbann.modules.Module] = None,
+        tie_embeddings: bool = True):
     """
     Creates a flexible transformer for masked language modeling tasks.
     """
@@ -284,6 +285,14 @@ def create_masked_language_modeling_transformer(
         name='embeddings',
         initializer=lbann.NormalInitializer(standard_deviation=math.sqrt(var)),
     )
+    if tie_embeddings:
+        out_embedding_weights = embedding_weights
+    else:
+        out_embedding_weights = lbann.Weights(
+            name='out_embeddings',
+            initializer=lbann.NormalInitializer(
+                standard_deviation=math.sqrt(var)),
+        )
 
     # Input is a sequences of token IDs followed by a mask sequence
     all_inputs = lbann.Input(data_field='samples')
@@ -380,7 +389,7 @@ def create_masked_language_modeling_transformer(
 
     # Apply language modeling head on results
     lm_head = lbann.ChannelwiseFullyConnected(result,
-                                              weights=embedding_weights,
+                                              weights=out_embedding_weights,
                                               output_channel_dims=[vocab_size],
                                               bias=False,
                                               transpose=True,

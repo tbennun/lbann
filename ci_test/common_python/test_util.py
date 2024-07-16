@@ -74,11 +74,12 @@ def lbann_test(check_gradients=False, train=False, **decorator_kwargs):
             full_graph = lbann.traverse_layer_graph(tester.loss)
             callbacks = []
             callbacks.append(
-                lbann.CallbackCheckMetric(metric='test',
-                                          lower_bound=0,
-                                          upper_bound=tester.tolerance,
-                                          error_on_failure=True,
-                                          execution_modes='train' if train else 'test'))
+                lbann.CallbackCheckMetric(
+                    metric='test',
+                    lower_bound=0,
+                    upper_bound=tester.tolerance,
+                    error_on_failure=True,
+                    execution_modes='train' if train else 'test'))
 
             check_grad_obj_func = None
             if check_gradients:
@@ -95,7 +96,8 @@ def lbann_test(check_gradients=False, train=False, **decorator_kwargs):
             metrics.extend(tester.extra_metrics)
             model = lbann.Model(epochs=1 if train else 0,
                                 layers=full_graph,
-                                objective_function=check_grad_obj_func if check_gradients else tester.loss,
+                                objective_function=check_grad_obj_func
+                                if check_gradients else tester.loss,
                                 metrics=metrics,
                                 callbacks=callbacks)
 
@@ -187,13 +189,15 @@ class ModelTester:
         inp = lbann.Input(data_field='samples')
         return slice_to_tensors(inp, tensor)
 
-    def inputs_like(self, *tensors) -> List[lbann.Layer]:
+    def inputs_like(self, *tensors, nograd=None) -> List[lbann.Layer]:
         """
         Marks the given tensors as input of the tested LBANN model, and
         returns a list of matching LBANN Slice nodes, potentially reshaped to
         be like the input tensors.
 
         :param tensors: The input NumPy arrays to use.
+        :param nograd: If given, a list of boolean entries that indicate
+                       whose input gradients should not be computed.
         :return: A list of LBANN layer objects that will serve as the inputs.
         """
         minibatch_size = tensors[0].shape[0]  # Assume the first dimension
@@ -204,7 +208,7 @@ class ModelTester:
 
         self.input_tensor = all_tensors_combined
         x = lbann.Input(data_field='samples')
-        return slice_to_tensors(x, *tensors)
+        return slice_to_tensors(x, *tensors, nograd=nograd)
 
     def make_reference(self, ref: Any) -> lbann.Input:
         """
@@ -293,7 +297,9 @@ class ModelTester:
                                  np.finfo(self.reference_tensor.dtype).eps)
 
 
-def slice_to_tensors(x: lbann.Layer, *tensors) -> List[lbann.Layer]:
+def slice_to_tensors(x: lbann.Layer,
+                     *tensors,
+                     nograd=None) -> List[lbann.Layer]:
     """
     Slices an LBANN layer into multiple tensors that match the dimensions of
     the given numpy arrays.
@@ -305,9 +311,11 @@ def slice_to_tensors(x: lbann.Layer, *tensors) -> List[lbann.Layer]:
 
         slice_points.append(offset)
     lslice = lbann.Slice(x, slice_points=slice_points)
+    nograd = nograd or [False] * len(tensors)
     return [
-        lbann.Reshape(_ensure_bp(t, lbann.Identity(lslice)), dims=t.shape[1:])
-        for t in tensors
+        lbann.Reshape((_ensure_bp(t, lbann.Identity(lslice))
+                       if not ng else lbann.Identity(lslice)),
+                      dims=t.shape[1:]) for t, ng in zip(tensors, nograd)
     ]
 
 
